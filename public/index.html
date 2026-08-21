@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Core - Terminal Distribué</title>
+    <style>
+        body { background-color: #0b0f19; color: #00ffcc; font-family: monospace; margin: 0; padding: 15px; }
+        h1 { font-size: 1.2rem; border-bottom: 1px solid #00ffcc; padding-bottom: 5px; }
+        .box { border: 1px solid #00ffcc; padding: 10px; margin-bottom: 15px; background: rgba(0,255,204,0.03); }
+        h3 { margin-top: 0; font-size: 1rem; }
+        textarea, button { width: 100%; background: #0b0f19; color: #00ffcc; border: 1px solid #00ffcc; padding: 10px; margin-top: 5px; box-sizing: border-box; font-family: monospace; }
+        button { background: #00ffcc; color: #0b0f19; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #00ddbb; }
+        .log { background: #05070c; padding: 10px; border: 1px dashed #00ffcc; font-size: 0.85rem; margin-top: 10px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>NEXUS CORE // TERMINAL DISTRIBUÉ</h1>
+    
+    <div class="box" id="status-box">
+        Connexion au noyau local...
+    </div>
+
+    <div class="box">
+        <h3>Isolation vers le Nœud Distant</h3>
+        <textarea id="payload" placeholder="Données textuelles ou payload à déporter..." rows="3"></textarea>
+        <button onclick="isolatePayload()">Isoler dans le Conteneur Distant (530 Go)</button>
+        <div id="response-log" class="log" style="display:none;"></div>
+    </div>
+
+    <script>
+        async function fetchStatus() {
+            try {
+                const res = await fetch('/api/system-status');
+                const data = await res.json();
+                document.getElementById('status-box').innerHTML = `
+                    <strong>Statut :</strong> ${data.status}<br>
+                    <strong>Port :</strong> ${data.port}<br>
+                    <strong>RAM Système :</strong> ${data.ramSystem}<br>
+                    <strong>Stockage Libre :</strong> ${data.storageFree}<br>
+                    <strong>Nœud Distant :</strong> ${data.remoteNodeState}
+                `;
+            } catch (e) {
+                document.getElementById('status-box').innerText = "Erreur de liaison avec le noyau local.";
+            }
+        }
+
+        async function isolatePayload() {
+            const payloadText = document.getElementById('payload').value;
+            const logBox = document.getElementById('response-log');
+            logBox.style.display = 'block';
+            logBox.innerText = "Transmission sécurisée au cluster en cours...";
+
+            try {
+                const res = await fetch('/api/vault/isolate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: payloadText })
+                });
+                const result = await res.json();
+                logBox.innerText = JSON.stringify(result, null, 2);
+            } catch (e) {
+                logBox.innerText = "Erreur critique lors de l'isolation réseau.";
+            }
+        }
+
+        fetchStatus();
+        setInterval(fetchStatus, 5000);
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,41 @@
+if(!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, JSON.stringify({version: "1.0", records:[]}));
+
+app.get('/', (req, res) => {
+  res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width"><style>body{background:#0b0f19;color:#0ff;font-family:monospace;padding:15px;margin:0}div.card{background:#121826;border:1px solid #0ff;padding:15px;margin-bottom:15px;border-radius:4px}textarea,input,button,pre{width:100%;background:#0b0f19;color:#fff;border:1px solid #0ff;padding:10px;margin-top:10px;box-sizing:border-box}button{background:#0ff;color:#000;font-weight:bold;padding:12px;border-radius:4px;cursor:pointer}button.danger{background:#ff3333;color:#fff}button.blue{background:#0088ff;color:#fff}button.sm{padding:5px 10px;font-size:0.8rem;width:auto;margin-top:5px}.t-box{background:#050914;border:1px dashed #0088ff;padding:10px;margin-top:10px;color:#0f0;font-size:0.85rem;border-radius:3px}.record-item{background:#090d16;border:1px solid #333;padding:10px;margin-top:8px;font-size:0.75rem;word-break:break-all}</style></head><body><h2>NEXUS CORE - SYNCHRO JWT</h2><div class="card"><strong>Statut:</strong> Pont Cloud Prêt | <strong>Port:</strong> 8081<div class="t-box" id="tel">Sonde en cours...</div></div><div class="card"><input type="text" id="cloudUrl" placeholder="URL du Nœud Distant (ex: https://api.vps.com)"><input type="text" id="jwtToken" placeholder="Jeton d'Accès JWT Bearer"><button class="blue" onclick="syncCloud()">Synchroniser vers le Cloud</button></div><div class="card"><textarea id="p" placeholder="Données textuelles ou payload..."></textarea><input type="file" id="f"><button onclick="s()">Isoler dans le Conteneur</button></div><div class="card"><button class="danger" onclick="purgeVault()">Purger Intégralement le Coffre</button><button onclick="l()" style="background:#08f;color:#fff;margin-top:10px">Actualiser le Coffre</button><div id="recordsList">Chargement des registres...</div></div><script>const r=async(u,o={})=>(await fetch(u,o)).json();const l=async()=>{try{const data=await r('/v');const container=document.getElementById('recordsList');if(!data.records || data.records.length===0){container.innerHTML='<pre>Coffre vide.</pre>';return;}let html='';data.records.forEach(rec=>{let content='';if(rec.payload){content=rec.payload.type==='file'?'[Fichier: '+rec.payload.name+' ('+Math.round(rec.payload.size/1024)+' Ko)]':(rec.payload.content||JSON.stringify(rec.payload));}else{content=rec.data||JSON.stringify(rec);};html+='<div class="record-item"><b>ID:</b> '+rec.id+'<br><b>Date:</b> '+rec.timestamp+'<br><b>Donnée:</b> '+content+'<br><button class="danger sm" onclick="deleteRecord('+rec.id+')">Supprimer</button></div>';});container.innerHTML=html;}catch(err){document.getElementById('recordsList').innerHTML='<pre>Erreur de parsing du coffre.</pre>';}};const s=async()=>{const text=document.getElementById('p').value;const fileInput=document.getElementById('f');if(fileInput.files.length>0){const file=fileInput.files[0];const reader=new FileReader();reader.onload=async function(e){await sendPayload({type:'file',name:file.name,size:file.size,content:e.target.result,text});};reader.readAsDataURL(file);return;}if(!text)return;await sendPayload({type:'text',content:text});};const sendPayload=async(data)=>{await r('/e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({p:data})});document.getElementById('p').value='';document.getElementById('f').value='';l();};const deleteRecord=async(id)=>{await r('/e/'+id,{method:'DELETE'});l();};const purgeVault=async()=>{if(confirm('Confirmer la purge totale du coffre ?')){await r('/purge',{method:'POST'});l();}};const syncCloud=async()=>{const baseUrl=document.getElementById('cloudUrl').value;const token=document.getElementById('jwtToken').value;if(!baseUrl || !token){alert('URL et Jeton JWT requis.');return;}try{const data=await r('/v');const response=comms=await fetch(baseUrl+'/api/v1/sync',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({timestamp:Date.now(),data:data.records})});if(!response.ok)throw new Error('Erreur de liaison réseau.');const resJson=await response.json();alert('Synchronisation réussie : '+resJson.status);}catch(err){alert('Mode hors-ligne actif. Échec de transmission distant: '+err.message);}};const t=async()=>{try{const d=await r('/t');document.getElementById('tel').innerHTML='► RAM Système : '+d.ramU+' Go / '+d.ramT+' Go ('+d.ramP+'%)<br>► Stockage Libre : '+d.diskF+' Go';}catch(e){}};l();t();setInterval(t,3000);</script></body></html>`);
+});
+
+app.post('/e', (req, res) => {
+  let v = JSON.parse(fs.readFileSync(DATA_FILE));
+  v.records.push({id: Date.now(), payload: req.body.p, timestamp: new Date().toISOString()});
+  fs.writeFileSync(DATA_FILE, JSON.stringify(v, null, 2));
+  res.json({ok:1});
+});
+
+app.delete('/e/:id', (req, res) => {
+  let v = JSON.parse(fs.readFileSync(DATA_FILE));
+  v.records = v.records.filter(r => r.id != req.params.id);
+  fs.writeFileSync(DATA_FILE, JSON.stringify(v, null, 2));
+  res.json({ok:1});
+});
+
+app.post('/purge', (req, res) => {
+  fs.writeFileSync(DATA_FILE, JSON.stringify({version: "1.0", records:[]}, null, 2));
+  res.json({ok:1});
+});
+
+app.get('/v', (req, res) => res.json(JSON.parse(fs.readFileSync(DATA_FILE))));
+
+app.get('/t', (req, res) => {
+  const ramT = (os.totalmem() / 1073741824).toFixed(2);
+  const ramF = (os.freemem() / 1073741824).toFixed(2);
+  const ramU = (ramT - ramF).toFixed(2);
+  const ramP = Math.round((ramU / ramT) * 100);
+  let diskF = 'N/A';
+  try {
+    const stat = fs.statfsSync(process.cwd());
+    diskF = ((stat.bavail * stat.bsize) / 1073741824).toFixed(2);
+  } catch(e) {}
+  res.json({ ramT, ramU, ramP, diskF });
+});
+
+app.listen(8081, '127.0.0.1');
