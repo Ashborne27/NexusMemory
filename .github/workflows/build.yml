@@ -28,6 +28,11 @@ jobs:
         npm install
         npx cap sync android
 
+    - name: Sanitize Gradle Properties for CI
+      run: |
+        # Supprime la référence locale Termux pour forcer l'utilisation du AAPT2 standard de Maven
+        sed -i '/aapt2FromMavenOverride/d' android/gradle.properties
+
     - name: Build Android APK
       run: |
         cd android
