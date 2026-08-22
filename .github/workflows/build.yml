@@ -31,7 +31,6 @@ jobs:
 
     - name: Infallible Sanitization (CI Adaptation)
       run: |
-        # Purge chirurgicale des variables locales Termux pour le cloud
         sed -i '/aapt2FromMavenOverride/d' android/gradle.properties || true
         rm -f android/local.properties
 
@@ -55,4 +54,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: NexusMemory-APK
-        path: android/app/build/outputs/apk/debug/app-debug.apk
+        path: android/app/build/outputs/apk/debug/*.apk
+        if-no-files-found: error
