@@ -52,4 +52,10 @@ public class MainActivity extends BridgeActivity {
             startNexusService();
         }
     }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        registerPlugin(NexusMemoryPlugin.class);
+    }
 }
