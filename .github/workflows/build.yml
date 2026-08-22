@@ -48,11 +48,11 @@ jobs:
       run: |
         cd android
         chmod +x gradlew
-        ./gradlew assembleDebug --no-daemon --stacktrace
+        ./gradlew assembleDebug --no-daemon
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: NexusMemory-APK
-        path: android/app/build/outputs/**/*.apk
+        path: android/app/build/outputs/apk/debug/*.apk
         if-no-files-found: error
