@@ -22,22 +22,34 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '22'
+        cache: 'npm'
 
     - name: Install dependencies & Build Web Assets
       run: |
         npm install
         npx cap sync android
 
-    - name: Sanitize Gradle Properties for CI
+    - name: Infallible Sanitization (CI Adaptation)
       run: |
-        # Supprime la référence locale Termux pour forcer l'utilisation du AAPT2 standard de Maven
-        sed -i '/aapt2FromMavenOverride/d' android/gradle.properties
+        # Purge chirurgicale des variables locales Termux pour le cloud
+        sed -i '/aapt2FromMavenOverride/d' android/gradle.properties || true
+        rm -f android/local.properties
+
+    - name: Cache Gradle Packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/**/*.gradle*', 'android/gradle.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
 
     - name: Build Android APK
       run: |
         cd android
         chmod +x gradlew
-        ./gradlew assembleDebug
+        ./gradlew assembleDebug --no-daemon
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
