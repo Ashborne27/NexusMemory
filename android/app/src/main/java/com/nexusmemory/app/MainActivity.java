@@ -4,25 +4,52 @@ import android.os.Bundle;
 import android.content.Intent;
 import android.os.Build;
 import android.view.WindowManager;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import android.content.pm.PackageManager;
+import android.Manifest;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+    private static final int PERMISSION_REQUEST_CODE = 1337;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // Activation de l acceleration matérielle GPU native
+        // 1. Activation de l acceleration matérielle GPU native
         getWindow().setFlags(
             WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
             WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
         );
 
-        // Lancement explicite et souverain du Foreground Service
+        // 2. Vérification et demande dynamique de la permission de notification pour Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, PERMISSION_REQUEST_CODE);
+            } else {
+                startNexusService();
+            }
+        } else {
+            startNexusService();
+        }
+    }
+
+    private void startNexusService() {
         Intent serviceIntent = new Intent(this, NexusForegroundService.class);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(serviceIntent);
         } else {
             startService(serviceIntent);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            // Lancement du service dans tous les cas après la réponse de l utilisateur
+            startNexusService();
         }
     }
 }
