@@ -11,7 +11,7 @@ import android.content.pm.ServiceInfo;
 import androidx.core.app.NotificationCompat;
 
 public class NexusForegroundService extends Service {
-    private static final String CHANNEL_ID = "NexusMemorySovereignChannel";
+    private static final String CHANNEL_ID = "NexusMemorySovereignUltimateChannel";
 
     @Override
     public void onCreate() {
@@ -19,10 +19,11 @@ public class NexusForegroundService extends Service {
         createNotificationChannel();
         
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("NexusMemory Actif")
-                .setContentText("Noyau de persistance souverain en cours d execution 24/7.")
-                .setSmallIcon(android.R.drawable.ic_menu_compass)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setContentTitle("NexusMemory [Souverain 24/7]")
+                .setContentText("Noyau de persistance absolue en cours d execution.")
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setOngoing(true)
                 .setAutoCancel(false)
                 .build();
@@ -38,13 +39,13 @@ public class NexusForegroundService extends Service {
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Utilisation de IMPORTANCE_DEFAULT pour forcer l affichage de l icône dans la barre d état
             NotificationChannel serviceChannel = new NotificationChannel(
                     CHANNEL_ID,
-                    "NexusMemory Sovereign Persistence",
-                    NotificationManager.IMPORTANCE_DEFAULT
+                    "NexusMemory Ultimate Persistence",
+                    NotificationManager.IMPORTANCE_HIGH
             );
-            serviceChannel.setDescription("Garantit l execution en arrière-plan 24h/24 de NexusMemory");
+            serviceChannel.setDescription("Canal souverain haute priorité pour NexusMemory 24/7");
+            serviceChannel.setShowBadge(true);
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
                 manager.createNotificationChannel(serviceChannel);
@@ -54,7 +55,7 @@ public class NexusForegroundService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        return START_STICKY; // Indique au système de relancer le service s il est nettoyé par la RAM
+        return START_STICKY;
     }
 
     @Override
