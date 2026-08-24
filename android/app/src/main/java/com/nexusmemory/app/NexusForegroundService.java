@@ -1,5 +1,7 @@
 package com.nexusmemory.app;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -19,36 +21,21 @@ public class NexusForegroundService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        acquireWakeLock();
-        createNotificationChannel();
         startForegroundServiceInstance();
+        scheduleHeartbeat();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        acquireWakeLock();
         startForegroundServiceInstance();
+        scheduleHeartbeat();
         return START_STICKY;
-    }
-
-    private void acquireWakeLock() {
-        try {
-            if (wakeLock == null) {
-                PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
-                if (powerManager != null) {
-                    wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "NexusMemory::SovereignWakeLock");
-                    wakeLock.acquire();
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     private void startForegroundServiceInstance() {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("NexusMemory [Souverain 24/7]")
-                .setContentText("Noyau permanent et verrouillage CPU actif.")
+                .setContentText("Noyau permanent et pulsations actives.")
                 .setSmallIcon(android.R.drawable.ic_menu_compass)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -61,6 +48,24 @@ public class NexusForegroundService extends Service {
                 startForeground(1337, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
             } else {
                 startForeground(1337, notification);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void scheduleHeartbeat() {
+        try {
+            Intent intent = new Intent(this, NexusBootReceiver.class);
+            intent.setAction("com.nexusmemory.app.RESTART_SERVICE");
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+            AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+            if (alarmManager != null) {
+                // Battement de cœur toutes les 15 minutes pour réveiller et maintenir sans saturer le CPU
+                long triggerAtMillis = System.currentTimeMillis() + (15 * 60 * 1000);
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -86,13 +91,9 @@ public class NexusForegroundService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (wakeLock != null && wakeLock.isHeld()) {
-            try {
-                wakeLock.release();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+        // Relance automatique en cas de destruction inopinée
+        Intent broadcastIntent = new Intent(this, NexusBootReceiver.class);
+        sendBroadcast(broadcastIntent);
     }
 
     @Override
