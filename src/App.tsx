@@ -1,3 +1,46 @@
+
+import { useEffect, useState } from 'react';
+import { registerPlugin } from '@capacitor/core';
+
+const NexusTelemetry = registerPlugin<{ getSystemMetrics(): Promise<any> }>('NexusTelemetry');
+
+function NexusTelemetryDashboard() {
+  const [metrics, setMetrics] = useState<any>(null);
+  const [error, setError] = useState<string | '\>( '\ );
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const res = await NexusTelemetry.getSystemMetrics();
+        setMetrics(res);
+      } catch (err: any) {
+        setError(err.message || 'Erreur de communication');
+      }
+    };
+
+    fetchMetrics();
+    const interval = setInterval(fetchMetrics, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div style={{ padding: '20px', background: '#0f172a', color: '#38bdf8', borderRadius: '12px', margin: '20px', fontFamily: 'monospace', border: '1px solid #38bdf8', boxShadow: '0 0 20px rgba(56, 189, 248, 0.2)' }}>
+      <h3 style={{ margin: '0 0 10px 0', color: '#f43f5e', fontSize: '16px' }}>⚡ NEXUSMEMORY [TÉLÉMÉTRIE SOUVERAINE]</h3>
+      {error && <p style={{ color: 'red' }}>Erreur : {error}</p>}
+      {metrics ? (
+        <div style={{ fontSize: '14px', lineHeight: '1.6' }}>
+          <div>🛡️ Daemon : <span style={{ color: '#10b981' }}>{metrics.daemonStatus}</span></div>
+          <div>🧠 RAM Utilisée : <b>{metrics.usedMemoryMB} MB</b> / {metrics.maxMemoryMB} MB</div>
+          <div>🔋 RAM Libre : <b>{metrics.freeMemoryMB} MB</b></div>
+          <div>⚡ Transactions Vault : <b>{metrics.vaultTransactions}</b></div>
+        </div>
+      ) : (
+        <p>Connexion au noyau en cours...</p>
+      )}
+    </div>
+  );
+}
+
 import React, { useState, useEffect } from \"react\";
 import { NexusMemoryService } from \"./services/NexusMemoryService\";
 
