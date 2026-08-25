@@ -17,21 +17,7 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Build Web Assets
-        run: npm run build
-
-      - name: Sync Capacitor Android
-        run: npx cap sync android
-
-      - name: Build Android APK
+      - name: Build Android APK with pre-built assets
         run: |
           cd android
           chmod +x gradlew
