@@ -14,7 +14,7 @@ import android.content.pm.ServiceInfo;
 import androidx.core.app.NotificationCompat;
 
 public class NexusForegroundService extends Service {
-    private static final String CHANNEL_ID = "NexusMemorySovereignUltimateChannel";
+    private static final String CHANNEL_ID = "NexusMemoryDaemonChannel";
 
     @Override
     public void onCreate() {
@@ -46,11 +46,11 @@ public class NexusForegroundService extends Service {
             if (manager != null) {
                 NotificationChannel serviceChannel = new NotificationChannel(
                         CHANNEL_ID,
-                        "NexusMemory Ultimate Persistence",
+                        "NexusMemory Sovereign Daemon",
                         NotificationManager.IMPORTANCE_HIGH
                 );
-                serviceChannel.setDescription("Canal souverain haute priorité 24/7");
-                serviceChannel.setShowBadge(true);
+                serviceChannel.setDescription("Noyau d exécution isolé multi-processus 24/7");
+                serviceChannel.setShowBadge(false);
                 manager.createNotificationChannel(serviceChannel);
             }
         }
@@ -58,8 +58,8 @@ public class NexusForegroundService extends Service {
 
     private void startForegroundServiceInstance() {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("NexusMemory [Souverain 24/7]")
-                .setContentText("Noyau permanent et pulsations actives.")
+                .setContentTitle("NexusMemory [Daemon Isolé]")
+                .setContentText("Noyau souverain actif et immunisé.")
                 .setSmallIcon(android.R.drawable.ic_menu_compass)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -87,7 +87,7 @@ public class NexusForegroundService extends Service {
             );
             AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
             if (alarmManager != null) {
-                long triggerAtMillis = System.currentTimeMillis() + (15 * 60 * 1000);
+                long triggerAtMillis = System.currentTimeMillis() + (10 * 60 * 1000);
                 alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
             }
         } catch (Throwable e) {

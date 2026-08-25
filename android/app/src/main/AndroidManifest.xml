@@ -23,7 +23,7 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".NexusForegroundService" android:enabled="true" android:exported="false" android:foregroundServiceType="dataSync" />
+        <service android:name=".NexusForegroundService" android:process=":nexus_daemon" android:enabled="true" android:exported="false" android:foregroundServiceType="dataSync" />
 
     <service android:name="com.nexus.memory.NexusForegroundService" android:exported="false" android:foregroundServiceType="dataSync" /></application>
 </manifest>
