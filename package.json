@@ -9,7 +9,7 @@
     "react-dom": "^18.2.0"
   },
   "scripts": {
-    "build": "vite build",
+    "build": "npx vite build",
     "dev": "vite"
   },
   "devDependencies": {
