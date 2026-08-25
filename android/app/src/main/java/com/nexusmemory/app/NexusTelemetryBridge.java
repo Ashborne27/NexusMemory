@@ -27,7 +27,7 @@ public class NexusTelemetryBridge extends Plugin {
             
             call.resolve(ret);
         } catch (Throwable e) {
-            call.reject("Telemetry extraction failed", e);
+            call.reject(e.getMessage() != null ? e.getMessage() : "Telemetry extraction failed");
         }
     }
 }
