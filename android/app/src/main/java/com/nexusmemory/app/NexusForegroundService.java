@@ -23,7 +23,7 @@ public class NexusForegroundService extends Service {
             createNotificationChannel();
             startForegroundServiceInstance();
             scheduleHeartbeat();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
     }
@@ -34,7 +34,7 @@ public class NexusForegroundService extends Service {
             createNotificationChannel();
             startForegroundServiceInstance();
             scheduleHeartbeat();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
         return START_STICKY;
@@ -44,17 +44,14 @@ public class NexusForegroundService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
-                NotificationChannel existingChannel = manager.getNotificationChannel(CHANNEL_ID);
-                if (existingChannel == null) {
-                    NotificationChannel serviceChannel = new NotificationChannel(
-                            CHANNEL_ID,
-                            "NexusMemory Ultimate Persistence",
-                            NotificationManager.IMPORTANCE_HIGH
-                    );
-                    serviceChannel.setDescription("Canal souverain haute priorité 24/7");
-                    serviceChannel.setShowBadge(true);
-                    manager.createNotificationChannel(serviceChannel);
-                }
+                NotificationChannel serviceChannel = new NotificationChannel(
+                        CHANNEL_ID,
+                        "NexusMemory Ultimate Persistence",
+                        NotificationManager.IMPORTANCE_HIGH
+                );
+                serviceChannel.setDescription("Canal souverain haute priorité 24/7");
+                serviceChannel.setShowBadge(true);
+                manager.createNotificationChannel(serviceChannel);
             }
         }
     }
@@ -76,7 +73,7 @@ public class NexusForegroundService extends Service {
             } else {
                 startForeground(1337, notification);
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
     }
@@ -93,7 +90,7 @@ public class NexusForegroundService extends Service {
                 long triggerAtMillis = System.currentTimeMillis() + (15 * 60 * 1000);
                 alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
     }
@@ -104,7 +101,7 @@ public class NexusForegroundService extends Service {
         try {
             Intent broadcastIntent = new Intent(this, NexusBootReceiver.class);
             sendBroadcast(broadcastIntent);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
     }
