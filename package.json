@@ -7,6 +7,11 @@
     "express": "^5.2.1"
   },
   "scripts": {
-    "build": "vite build"
+    "build": "vite build",
+    "dev": "vite"
+  },
+  "devDependencies": {
+    "vite": "^5.0.12",
+    "@vitejs/plugin-react": "^4.2.1"
   }
 }
