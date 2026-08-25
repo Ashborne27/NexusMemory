@@ -1,10 +1,9 @@
-
 import { useEffect, useState } from 'react';
 import { registerPlugin } from '@capacitor/core';
 
 const NexusTelemetry = registerPlugin<{ getSystemMetrics(): Promise<any> }>('NexusTelemetry');
 
-function NexusTelemetryDashboard() {
+export default function App() {
   const [metrics, setMetrics] = useState<any>(null);
   const [error, setError] = useState<string | '\>( '\ );
 
@@ -24,108 +23,30 @@ function NexusTelemetryDashboard() {
   }, []);
 
   return (
-    <div style={{ padding: '20px', background: '#0f172a', color: '#38bdf8', borderRadius: '12px', margin: '20px', fontFamily: 'monospace', border: '1px solid #38bdf8', boxShadow: '0 0 20px rgba(56, 189, 248, 0.2)' }}>
-      <h3 style={{ margin: '0 0 10px 0', color: '#f43f5e', fontSize: '16px' }}>⚡ NEXUSMEMORY [TÉLÉMÉTRIE SOUVERAINE]</h3>
-      {error && <p style={{ color: 'red' }}>Erreur : {error}</p>}
-      {metrics ? (
-        <div style={{ fontSize: '14px', lineHeight: '1.6' }}>
-          <div>🛡️ Daemon : <span style={{ color: '#10b981' }}>{metrics.daemonStatus}</span></div>
-          <div>🧠 RAM Utilisée : <b>{metrics.usedMemoryMB} MB</b> / {metrics.maxMemoryMB} MB</div>
-          <div>🔋 RAM Libre : <b>{metrics.freeMemoryMB} MB</b></div>
-          <div>⚡ Transactions Vault : <b>{metrics.vaultTransactions}</b></div>
-        </div>
-      ) : (
-        <p>Connexion au noyau en cours...</p>
-      )}
-    </div>
-  );
-}
+    <div style={{ padding: '20px', background: '#0f172a', color: '#f8fafc', minHeight: '100vh', fontFamily: 'monospace' }}>
+      <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+        <h1 style={{ color: '#38bdf8', fontSize: '22px', margin: '0 0 5px 0' }}>NexusMemory</h1>
+        <p style={{ color: '#94a3b8', fontSize: '12px', margin: 0 }}>Noyau de virtualisation et persistence souveraine actif.</p>
+      </div>
 
-import React, { useState, useEffect } from \"react\";
-import { NexusMemoryService } from \"./services/NexusMemoryService\";
+      <div style={{ background: '#1e293b', padding: '15px', borderRadius: '12px', border: '1px solid #38bdf8', boxShadow: '0 0 20px rgba(56, 189, 248, 0.2)' }}>
+        <h3 style={{ margin: '0 0 12px 0', color: '#f43f5e', fontSize: '15px' }}>⚡ TÉLÉMÉTRIE SOUVERAINE</h3>
+        {error && <p style={{ color: '#ef4444', fontSize: '12px' }}>Erreur : {error}</p>}
+        {metrics ? (
+          <div style={{ fontSize: '13px', lineHeight: '1.8' }}>
+            <div>🛡️ Daemon : <span style={{ color: '#10b981', fontWeight: 'bold' }}>{metrics.daemonStatus}</span></div>
+            <div>🧠 RAM Utilisée : <b style={{ color: '#38bdf8' }}>{metrics.usedMemoryMB} MB</b> / {metrics.maxMemoryMB} MB</div>
+            <div>🔋 RAM Libre : <b style={{ color: '#38bdf8' }}>{metrics.freeMemoryMB} MB</b></div>
+            <div>⚡ Transactions Vault : <b style={{ color: '#fbbf24' }}>{metrics.vaultTransactions}</b></div>
+          </div>
+        ) : (
+          <p style={{ color: '#94a3b8', fontSize: '13px' }}>Connexion au noyau en cours...</p>
+        )}
+      </div>
 
-export default function App() {
-  const [title, setTitle] = useState(\"\");
-  const [content, setContent] = useState(\"\");
-  const [query, setQuery] = useState(\"\");
-  const [results, setResults] = useState<Array<{ title: string; content: string }>>([]);
-  const [status, setStatus] = useState(\"\");
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title || !content) return;
-    const success = await NexusMemoryService.save(title, content);
-    if (success) {
-      setStatus(\"Souvenir gravé avec succès dans le noyau FTS5.\");
-      setTitle(\"\");
-      setContent(\"\");
-      executeSearch(\"\");
-    } else {
-      setStatus(\"Erreur lors de la gravure du souvenir.\");
-    }
-  };
-
-  const executeSearch = async (searchTerm: string) => {
-    const res = await NexusMemoryService.search(searchTerm);
-    setResults(res);
-  };
-
-  useEffect(() => {
-    executeSearch(\"\");
-  }, []);
-
-  return (
-    <div style={{ padding: \"20px\", fontFamily: \"sans-serif\", background: \"#0f172a\", color: \"#f8fafc\", minHeight: \"100vh\", boxSizing: \"border-box\" }}>
-      <h1 style={{ fontSize: \"24px\", fontWeight: \"bold\", marginBottom: \"5px\" }}>NexusMemory</h1>
-      <p style={{ fontSize: \"14px\", color: \"#94a3b8\", marginBottom: \"20px\" }}>Noyau de persistance 24/7 & Recherche FTS5 ultrarapide</p>
-
-      {/* Formulaire d ajout */}
-      <form onSubmit={handleSave} style={{ background: \"#1e293b\", padding: \"15px\", borderRadius: \"8px\", marginBottom: \"20px\", border: \"1px solid #334155\" }}>
-        <h2 style={{ fontSize: \"16px\", marginBottom: \"10px\", color: \"#38bdf8\" }}>Ajouter un Souvenir</h2>
-        <input 
-          type="text\" 
-          placeholder=\"Titre du souvenir...\" 
-          value={title} 
-          onChange={e => setTitle(e.target.value)}
-          style={{ width: \"100%\", padding: \"10px\", marginBottom: \"10px\", background: \"#0f172a\", border: \"1px solid #334155\", color: \"#fff\", borderRadius: \"4px\", boxSizing: \"border-box\" }}
-        />
-        <textarea 
-          placeholder=\"Contenu mémoriel...\" 
-          value={content} 
-          onChange={e => setContent(e.target.value)}
-          style={{ width: \"100%\", padding: \"10px\", marginBottom: \"10px\", background: \"#0f172a\", border: \"1px solid #334155\", color: \"#fff\", borderRadius: \"4px\", height: \"80px\", boxSizing: \"border-box\" }}
-        />
-        <button type="submit" style={{ background: \"#3b82f6\", color: \"#fff\", padding: \"10px 15px\", border: \"none\", borderRadius: \"4px\", fontWeight: \"bold\", width: \"100%\", cursor: \"pointer\" }}>Graver dans le Noyau</button>
-        {status && <p style={{ fontSize: \"12px\", marginTop: \"10px\", color: \"#38bdf8\" }}>{status}</p>}
-      </form>
-
-      {/* Section de recherche */}
-      <div style={{ background: \"#1e293b\", padding: \"15px\", borderRadius: \"8px\", border: \"1px solid #334155\" }}>
-        <h2 style={{ fontSize: \"16px\", marginBottom: \"10px\", color: \"#38bdf8\" }}>Recherche FTS5 Foudroyante</h2>
-        <input 
-          type="text\" 
-          placeholder=\"Rechercher un mot-clé...\" 
-          value={query} 
-          onChange={e => { 
-            const val = e.target.value;
-            setQuery(val); 
-            executeSearch(val); 
-          }}
-          style={{ width: \"100%\", padding: \"10px\", marginBottom: \"15px\", background: \"#0f172a\", border: \"1px solid #334155\", color: \"#fff\", borderRadius: \"4px\", boxSizing: \"border-box\" }}
-        />
-
-        <div style={{ display: \"flex\", flexDirection: \"column\", gap: \"10px\" }}>
-          {results.length === 0 ? (
-            <p style={{ fontSize: \"14px\", color: \"#64748b\" }}>Aucun souvenir enregistré ou trouvé.</p>
-          ) : (
-            results.map((item, index) => (
-              <div key={index} style={{ background: \"#0f172a\", padding: \"10px\", borderRadius: \"6px\", border: \"1px solid #334155\" }}>
-                <h3 style={{ fontSize: \"15px\", fontWeight: \"bold\", color: \"#38bdf8\", marginBottom: \"4px\" }}>{item.title}</h3>
-                <p style={{ fontSize: \"13px\", color: \"#cbd5e1\", margin: 0 }}>{item.content}</p>
-              </div>
-            ))
-          )}
-        </div>
+      <div style={{ marginTop: '20px', background: '#1e293b', padding: '12px' , borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ width: '10px', height: '10px', borderRadius: '50%' , background: '#10b981', boxShadow: '0 0 8px #10b981' }}></div>
+        <span style={{ fontSize: '13px', color: '#10b981', fontWeight: 'bold' }}>Service Foreground Actif</span>
       </div>
     </div>
   );
