@@ -1,0 +1,6 @@
+{
+	"appId": "com.nexus.memory",
+	"appName": "NexusMemory",
+	"webDir": "www",
+	"bundledWebRuntime": false
+}
