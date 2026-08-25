@@ -9,27 +9,54 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
-import android.os.PowerManager;
 import android.content.Context;
 import android.content.pm.ServiceInfo;
 import androidx.core.app.NotificationCompat;
 
 public class NexusForegroundService extends Service {
     private static final String CHANNEL_ID = "NexusMemorySovereignUltimateChannel";
-    private PowerManager.WakeLock wakeLock;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        startForegroundServiceInstance();
-        scheduleHeartbeat();
+        try {
+            createNotificationChannel();
+            startForegroundServiceInstance();
+            scheduleHeartbeat();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        startForegroundServiceInstance();
-        scheduleHeartbeat();
+        try {
+            createNotificationChannel();
+            startForegroundServiceInstance();
+            scheduleHeartbeat();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return START_STICKY;
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                NotificationChannel existingChannel = manager.getNotificationChannel(CHANNEL_ID);
+                if (existingChannel == null) {
+                    NotificationChannel serviceChannel = new NotificationChannel(
+                            CHANNEL_ID,
+                            "NexusMemory Ultimate Persistence",
+                            NotificationManager.IMPORTANCE_HIGH
+                    );
+                    serviceChannel.setDescription("Canal souverain haute priorité 24/7");
+                    serviceChannel.setShowBadge(true);
+                    manager.createNotificationChannel(serviceChannel);
+                }
+            }
+        }
     }
 
     private void startForegroundServiceInstance() {
@@ -63,7 +90,6 @@ public class NexusForegroundService extends Service {
             );
             AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
             if (alarmManager != null) {
-                // Battement de cœur toutes les 15 minutes pour réveiller et maintenir sans saturer le CPU
                 long triggerAtMillis = System.currentTimeMillis() + (15 * 60 * 1000);
                 alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
             }
@@ -72,28 +98,15 @@ public class NexusForegroundService extends Service {
         }
     }
 
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel serviceChannel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "NexusMemory Ultimate Persistence",
-                    NotificationManager.IMPORTANCE_HIGH
-            );
-            serviceChannel.setDescription("Canal souverain haute priorité 24/7");
-            serviceChannel.setShowBadge(true);
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            if (manager != null) {
-                manager.createNotificationChannel(serviceChannel);
-            }
-        }
-    }
-
     @Override
     public void onDestroy() {
         super.onDestroy();
-        // Relance automatique en cas de destruction inopinée
-        Intent broadcastIntent = new Intent(this, NexusBootReceiver.class);
-        sendBroadcast(broadcastIntent);
+        try {
+            Intent broadcastIntent = new Intent(this, NexusBootReceiver.class);
+            sendBroadcast(broadcastIntent);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
