@@ -11,6 +11,11 @@ import android.Manifest;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+    @Override
+    public void onCreate(android.os.Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        registerPlugin(NexusTelemetryBridge.class);
+    }
     private static final int PERMISSION_REQUEST_CODE = 1337;
 
     @Override
