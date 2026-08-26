@@ -18,24 +18,23 @@ public class NexusForegroundService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "NexusForegroundService -> onCreate() initialisé avec succès.");
+        Log.e(TAG, ">>> NEXUS DAEMON ON_CREATE ACTIF <<<");
         createNotificationChannel();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(TAG, "NexusForegroundService -> onStartCommand() actif en arrière-plan.");
+        Log.e(TAG, ">>> NEXUS DAEMON ON_START_COMMAND ACTIF <<<");
         
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("NexusMemory • Noyau Souverain")
-                .setContentText("Daemon: ACTIVE | RAM: Optimisée")
+                .setContentText("Daemon Principal: ACTIF & IMMORTEL")
                 .setSmallIcon(android.R.drawable.ic_menu_compass)
                 .setOngoing(true)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
                 .build();
 
         startForeground(NOTIFICATION_ID, notification);
-
-        // Le service redémarrera automatiquement si le système le tue par manque de mémoire
         return START_STICKY;
     }
 
@@ -44,18 +43,12 @@ public class NexusForegroundService extends Service {
         return null;
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        Log.d(TAG, "NexusForegroundService -> onDestroy() - Le démon s est éteint.");
-    }
-
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel serviceChannel = new NotificationChannel(
                     CHANNEL_ID,
                     "Nexus Daemon Channel",
-                    NotificationManager.IMPORTANCE_LOW
+                    NotificationManager.IMPORTANCE_HIGH
             );
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
