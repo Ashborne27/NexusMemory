@@ -8,20 +8,25 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
+import android.util.Log;
 import androidx.core.app.NotificationCompat;
 
 public class NexusForegroundService extends Service {
+    private static final String TAG = "NexusDaemon";
     private static final String CHANNEL_ID = "NexusDaemonChannel";
     private static final int NOTIFICATION_ID = 1337;
 
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.d(TAG, "NexusForegroundService -> onCreate() : Initialisation du noyau souverain.");
         createNotificationChannel();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.d(TAG, "NexusForegroundService -> onStartCommand() : Le démon pulse en arrière-plan.");
+        
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent,
                 PendingIntent.FLAG_IMMUTABLE);
@@ -54,6 +59,7 @@ public class NexusForegroundService extends Service {
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
                 manager.createNotificationChannel(serviceChannel);
+                Log.d(TAG, "Canal de notification persistant forgé avec succès.");
             }
         }
     }
