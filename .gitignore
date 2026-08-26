@@ -3,3 +3,5 @@ dist/
 android/app/build/
 .gradle/
 build/
+app-nexus-supreme.apk
+NexusMemory-APK/
