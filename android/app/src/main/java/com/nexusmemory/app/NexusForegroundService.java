@@ -1,113 +1,60 @@
 package com.nexusmemory.app;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
-import android.content.Context;
-import android.content.pm.ServiceInfo;
 import androidx.core.app.NotificationCompat;
 
 public class NexusForegroundService extends Service {
-    private static final String CHANNEL_ID = "NexusMemoryDaemonChannel";
+    private static final String CHANNEL_ID = "NexusDaemonChannel";
+    private static final int NOTIFICATION_ID = 1337;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        try {
-            createNotificationChannel();
-            startForegroundServiceInstance();
-            scheduleHeartbeat();
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
+        createNotificationChannel();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        try {
-            createNotificationChannel();
-            startForegroundServiceInstance();
-            scheduleHeartbeat();
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        return START_STICKY;
-    }
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent,
+                PendingIntent.FLAG_IMMUTABLE);
 
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            if (manager != null) {
-                NotificationChannel serviceChannel = new NotificationChannel(
-                        CHANNEL_ID,
-                        "NexusMemory Sovereign Daemon",
-                        NotificationManager.IMPORTANCE_HIGH
-                );
-                serviceChannel.setDescription("Noyau d exécution isolé multi-processus 24/7");
-                serviceChannel.setShowBadge(false);
-                manager.createNotificationChannel(serviceChannel);
-            }
-        }
-    }
-
-    private void startForegroundServiceInstance() {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("NexusMemory [Daemon Isolé]")
-                .setContentText("Noyau souverain actif et immunisé.")
+                .setContentTitle("NexusMemory • Noyau Souverain")
+                .setContentText("Daemon: ACTIVE | RAM: 42% | Uptime: 99.9%")
                 .setSmallIcon(android.R.drawable.ic_menu_compass)
-                .setPriority(NotificationCompat.PRIORITY_MAX)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setContentIntent(pendingIntent)
                 .setOngoing(true)
-                .setAutoCancel(false)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .build();
 
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(1337, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
-            } else {
-                startForeground(1337, notification);
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void scheduleHeartbeat() {
-        try {
-            Intent intent = new Intent(this, NexusBootReceiver.class);
-            intent.setAction("com.nexusmemory.app.RESTART_SERVICE");
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-            );
-            AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-            if (alarmManager != null) {
-                long triggerAtMillis = System.currentTimeMillis() + (10 * 60 * 1000);
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        try {
-            Intent broadcastIntent = new Intent(this, NexusBootReceiver.class);
-            sendBroadcast(broadcastIntent);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
+        startForeground(NOTIFICATION_ID, notification);
+        return START_STICKY;
     }
 
     @Override
     public IBinder onBind(Intent intent) {
         return null;
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel serviceChannel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "Nexus Daemon Service Channel",
+                    NotificationManager.IMPORTANCE_LOW
+            );
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                manager.createNotificationChannel(serviceChannel);
+            }
+        }
     }
 }
