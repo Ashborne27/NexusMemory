@@ -16,27 +16,35 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 1. Isolation asynchrone des charges lourdes pour garantir un HomeLauncher instantané
+        // Isolation des tâches lourdes en arrière-plan
         backgroundExecutor.execute(() -> {
             try {
-                Thread.sleep(150); // Stabilisation initiale du démon
+                Thread.sleep(150);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
         });
 
-        // 2. Injection sécurisée du bridge et accélération matérielle GPU sur le thread principal
-        runOnUiThread(() -> {
-            try {
-                WebView webView = findViewById(com.getcapacitor.R.id.webview);
-                if (webView != null) {
-                    webView.getSettings().setJavaScriptEnabled(true);
-                    webView.addJavascriptInterface(new NexusBridge(this), "AndroidNexus");
-                    webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
-                    Log.e(TAG, "NexusBridge injecté et accélération GPU activée avec succès.");
+        // Injection du bridge et accélération matérielle via l API officielle Capacitor
+        backgroundExecutor.execute(() -> {
+            int retries = 15;
+            while (retries > 0 && (getBridge() == null || getBridge().getWebView() == null)) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    break;
                 }
-            } catch (Exception e) {
-                Log.e(TAG, "Erreur lors de l injection du bridge: " + e.getMessage());
+                retries--;
+            }
+            
+            if (getBridge() != null && getBridge().getWebView() != null) {
+                runOnUiThread(() -> {
+                    WebView webView = getBridge().getWebView();
+                    webView.getSettings().setJavaScriptEnabled(true);
+                    webView.addJavascriptInterface(new NexusBridge(MainActivity.this), "AndroidNexus");
+                    webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+                    Log.e(TAG, "NexusBridge injecté et accélération GPU activée via Bridge API.");
+                });
             }
         });
     }
