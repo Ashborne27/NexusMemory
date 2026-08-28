@@ -1,30 +1,38 @@
 package com.ashborne.nexusmemory;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.webkit.JavascriptInterface;
 import android.util.Log;
 
 public class NexusBridge {
+    private final Context context;
+    private final NexusDatabase nexusDatabase;
     private static final String TAG = "NexusBridge";
-    private static final String PREF_NAME = "NexusSecureStorage";
-    private Context context;
 
     public NexusBridge(Context context) {
         this.context = context;
+        this.nexusDatabase = new NexusDatabase(context);
     }
 
     @JavascriptInterface
     public void saveData(String key, String value) {
-        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        prefs.edit().putString(key, value).apply();
-        // Log supprimé pour garantir une fluidité absolue à haute fréquence
+        try {
+            nexusDatabase.putData(key, value);
+            Log.e(TAG, "Donnée persistée nativement pour la clé: " + key);
+        } catch (Exception e) {
+            Log.e(TAG, "Erreur de persistance native: " + e.getMessage());
+        }
     }
 
     @JavascriptInterface
     public String getData(String key) {
-        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        return prefs.getString(key, "{}");
+        try {
+            String val = nexusDatabase.getData(key);
+            return val != null ? val : "";
+        } catch (Exception e) {
+            Log.e(TAG, "Erreur de lecture native: " + e.getMessage());
+            return "";
+        }
     }
 
     @JavascriptInterface
