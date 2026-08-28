@@ -48,12 +48,4 @@ public class MainActivity extends BridgeActivity {
             }
         });
     }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (backgroundExecutor != null) {
-            backgroundExecutor.shutdown();
-        }
-    }
 }
