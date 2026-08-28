@@ -25,14 +25,4 @@ public class MainActivity extends BridgeActivity {
         }
         return super.onKeyDown(keyCode, event);
     }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-    }
 }
