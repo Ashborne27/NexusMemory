@@ -3,34 +3,38 @@ package com.ashborne.nexusmemory;
 import android.content.Context;
 import android.webkit.JavascriptInterface;
 import android.util.Log;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class NexusBridge {
     private final Context context;
     private final NexusDatabase nexusDatabase;
+    private final ExecutorService executorService;
     private static final String TAG = "NexusBridge";
 
     public NexusBridge(Context context) {
         this.context = context;
         this.nexusDatabase = new NexusDatabase(context);
+        this.executorService = Executors.newFixedThreadPool(4);
     }
 
     @JavascriptInterface
     public void saveData(String key, String value) {
-        try {
-            nexusDatabase.putData(key, value);
-            Log.e(TAG, "Donnée persistée nativement pour la clé: " + key);
-        } catch (Exception e) {
-            Log.e(TAG, "Erreur de persistance native: " + e.getMessage());
-        }
+        executorService.execute(() -> {
+            try {
+                nexusDatabase.putData(key, value);
+            } catch (Exception e) {
+                Log.e(TAG, "Erreur d ecriture asynchrone: " + e.getMessage());
+            }
+        });
     }
 
     @JavascriptInterface
     public String getData(String key) {
         try {
-            String val = nexusDatabase.getData(key);
-            return val != null ? val : "";
+            return nexusDatabase.getData(key);
         } catch (Exception e) {
-            Log.e(TAG, "Erreur de lecture native: " + e.getMessage());
+            Log.e(TAG, "Erreur de lecture: " + e.getMessage());
             return "";
         }
     }
