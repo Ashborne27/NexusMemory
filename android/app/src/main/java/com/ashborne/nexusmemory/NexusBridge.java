@@ -17,18 +17,14 @@ public class NexusBridge {
     @JavascriptInterface
     public void saveData(String key, String value) {
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putString(key, value);
-        editor.apply();
-        Log.e(TAG, "Donnée persistée [" + key + "] : " + value);
+        prefs.edit().putString(key, value).apply();
+        // Log supprimé pour garantir une fluidité absolue à haute fréquence
     }
 
     @JavascriptInterface
     public String getData(String key) {
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        String value = prefs.getString(key, "{}");
-        Log.e(TAG, "Donnée récupérée [" + key + "] : " + value);
-        return value;
+        return prefs.getString(key, "{}");
     }
 
     @JavascriptInterface

@@ -1,17 +1,28 @@
-// Pont de synchronisation et de persistance infaillible NexusMemory
+// Pont de synchronisation et de persistance ultra-fluide avec Debounce
+
+let saveTimeouts: { [key: string]: any } = {};
 
 export const NexusStorage = {
-  save(key: string, data: any): void {
+  save(key: string, data: any, delay: number = 300): void {
     const serialized = JSON.stringify(data);
-    try {
-      if ((window as any).AndroidNexus) {
-        (window as any).AndroidNexus.saveData(key, serialized);
-      } else {
-        localStorage.setItem(key, serialized);
-      }
-    } catch (e) {
-      console.error("Erreur de sauvegarde persistante:", e);
+    
+    // Annulation du timeout précédent pour éviter la saturation du pont lors de la frappe rapide
+    if (saveTimeouts[key]) {
+      clearTimeout(saveTimeouts[key]);
     }
+
+    // Sauvegarde différée (Debounce) pour garantir zéro latence à la saisie
+    saveTimeouts[key] = setTimeout(() => {
+      try {
+        if ((window as any).AndroidNexus) {
+          (window as any).AndroidNexus.saveData(key, serialized);
+        } else {
+          localStorage.setItem(key, serialized);
+        }
+      } catch (e) {
+        console.error("Erreur de sauvegarde persistante:", e);
+      }
+    }, delay);
   },
 
   load(key: string): any {
