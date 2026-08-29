@@ -34,10 +34,4 @@ public class MainActivity extends BridgeActivity {
             } catch (Exception e) {}
         });
     }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        networkExecutor.shutdownNow();
-    }
 }
