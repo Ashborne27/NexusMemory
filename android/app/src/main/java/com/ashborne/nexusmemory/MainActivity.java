@@ -20,23 +20,4 @@ public class MainActivity extends BridgeActivity {
         // Activation initiale du Moteur Hyper-Buffer 50Go RAM
         NexusHyperBuffer.optimizeMemoryAndProcess(this);
     }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // Réoptimisation dynamique à chaque retour au premier plan
-        NexusHyperBuffer.optimizeMemoryAndProcess(this);
-        if (this.bridge != null && this.bridge.getWebView() != null) {
-            this.bridge.getWebView().evaluateJavascript("if(window.resumeNexusEngine) { window.resumeNexusEngine(); }", null);
-        }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        // Compression et libération instantanée des ressources pour laisser respirer l hôte
-        if (this.bridge != null && this.bridge.getWebView() != null) {
-            this.bridge.getWebView().evaluateJavascript("if(window.pauseNexusEngine) { window.pauseNexusEngine(); }", null);
-        }
-    }
 }
