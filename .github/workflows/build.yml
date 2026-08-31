@@ -29,8 +29,9 @@ jobs:
         sudo mv gradle-${GRADLE_VERSION} /opt/gradle
         echo "/opt/gradle/bin" >> $GITHUB_PATH
 
-    - name: Configure Project Structure
+    - name: Ensure Complete Project Structure & Configuration
       run: |
+        # 1. Root Settings
         cat << 'EOL' > settings.gradle
         pluginManagement {
             repositories {
@@ -50,12 +51,81 @@ jobs:
         include ':app'
         EOL
 
+        # 2. Root Build.gradle
         cat << 'EOL' > build.gradle
-        // Root project
+        plugins {
+            id 'com.android.application' version '8.2.0' apply false
+        }
         EOL
 
-    - name: Build Debug APK with Stacktrace
-      run: gradle assembleDebug --stacktrace
+        # 3. App Build.gradle
+        mkdir -p app
+        cat << 'EOL' > app/build.gradle
+        plugins {
+            id 'com.android.application'
+        }
+
+        android {
+            namespace 'com.ashborne.nexusmemory'
+            compileSdk 34
+
+            defaultConfig {
+                applicationId "com.ashborne.nexusmemory"
+                minSdk 24
+                targetSdk 34
+                versionCode 1
+                versionName "1.0"
+            }
+
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_17
+                targetCompatibility JavaVersion.VERSION_17
+            }
+        }
+        EOL
+
+        # 4. AndroidManifest.xml
+        mkdir -p app/src/main
+        if [ ! -f app/src/main/AndroidManifest.xml ]; then
+            cat << 'EOL' > app/src/main/AndroidManifest.xml
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application
+                    android:allowBackup="true"
+                    android:label="NexusMemory"
+                    android:supportsRtl="true"
+                    android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+                    <activity
+                        android:name=".MainActivity"
+                        android:exported="true">
+                        <intent-filter>
+                            <action android:name="android.intent.action.MAIN" />
+                            <category android:name="android.intent.category.LAUNCHER" />
+                        </intent-filter>
+                    </activity>
+                </application>
+            </manifest>
+            EOL
+        fi
+
+        # 5. MainActivity.kt
+        mkdir -p app/src/main/java/com/ashborne/nexusmemory
+        if [ ! -f app/src/main/java/com/ashborne/nexusmemory/MainActivity.kt ]; then
+            cat << 'EOL' > app/src/main/java/com/ashborne/nexusmemory/MainActivity.kt
+            package com.ashborne.nexusmemory
+
+            import android.app.Activity
+            import android.os.Bundle
+
+            class MainActivity : Activity() {
+                override fun onCreate(savedInstanceState: Bundle?) {
+                    super.onCreate(savedInstanceState)
+                }
+            }
+            EOL
+        fi
+
+    - name: Build Debug APK with Verbose Info
+      run: gradle assembleDebug --info
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
