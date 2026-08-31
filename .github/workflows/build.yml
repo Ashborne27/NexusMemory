@@ -18,10 +18,13 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@v3
+
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Create Gradle Wrapper & Settings
+    - name: Create Settings and Generate Wrapper
       run: |
         echo "include ':app'" > settings.gradle
         gradle wrapper
