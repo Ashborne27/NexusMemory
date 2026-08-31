@@ -21,7 +21,7 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Create Gradle Wrapper
+    - name: Create Gradle Wrapper & Settings
       run: |
         echo "include ':app'" > settings.gradle
         gradle wrapper
