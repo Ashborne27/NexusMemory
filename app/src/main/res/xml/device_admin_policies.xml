@@ -1,0 +1,10 @@
+<device-admin xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-policies>
+        <!-- Politiques de contrôle et d'isolation de l'espace conteneurisé -->
+        <limit-password />
+        <watch-login />
+        <reset-password />
+        <force-lock />
+        <expire-password />
+    </uses-policies>
+</device-admin>

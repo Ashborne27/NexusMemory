@@ -1,4 +1,4 @@
-name: Build NexusMemory APK
+name: Build NexusMemory Native APK
 
 on:
   push:
@@ -12,47 +12,25 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Set up JDK 21
-      uses: actions/setup-java@v5
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '21'
+        java-version: '17'
 
-    - name: Setup Node.js 22
-      uses: actions/setup-node@v4
-      with:
-        node-version: '22'
-        cache: 'npm'
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
 
-    - name: Install dependencies & Build Web Assets
+    - name: Create Gradle Wrapper
       run: |
-        npm install
-        npx cap sync android
+        echo "include ':app'" > settings.gradle
+        gradle wrapper
 
-    - name: Infallible Sanitization (CI Adaptation)
-      run: |
-        sed -i '/aapt2FromMavenOverride/d' android/gradle.properties || true
-        rm -f android/local.properties
-
-    - name: Cache Gradle Packages
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/**/*.gradle*', 'android/gradle.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
-
-    - name: Build Android APK
-      run: |
-        cd android
-        chmod +x gradlew
-        ./gradlew assembleDebug --no-daemon
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: NexusMemory-APK
-        path: android/app/build/outputs/apk/debug/*.apk
-        if-no-files-found: error
+        name: NexusMemory-Native-APK
+        path: app/build/outputs/apk/debug/app-debug.apk
