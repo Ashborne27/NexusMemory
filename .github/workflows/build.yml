@@ -29,14 +29,17 @@ jobs:
         sudo mv gradle-${GRADLE_VERSION} /opt/gradle
         echo "/opt/gradle/bin" >> $GITHUB_PATH
 
-    - name: Prepare Root Gradle Files and Generate Wrapper
+    - name: Setup Root Project Configuration
       run: |
         echo "include ':app'" > settings.gradle
-        echo "// Root project configuration" > build.gradle
-        gradle wrapper --gradle-version 8.5
+        cat << 'EOL' > build.gradle
+        plugins {
+            id 'com.android.application' version '8.2.0' apply false
+        }
+        EOL
 
-    - name: Build Debug APK
-      run: ./gradlew assembleDebug
+    - name: Build Debug APK Directly
+      run: gradle assembleDebug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
