@@ -29,17 +29,33 @@ jobs:
         sudo mv gradle-${GRADLE_VERSION} /opt/gradle
         echo "/opt/gradle/bin" >> $GITHUB_PATH
 
-    - name: Setup Root Project Configuration
+    - name: Configure Project Structure
       run: |
-        echo "include ':app'" > settings.gradle
-        cat << 'EOL' > build.gradle
-        plugins {
-            id 'com.android.application' version '8.2.0' apply false
+        cat << 'EOL' > settings.gradle
+        pluginManagement {
+            repositories {
+                google()
+                mavenCentral()
+                gradlePluginPortal()
+            }
         }
+        dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        rootProject.name = "NexusMemory"
+        include ':app'
         EOL
 
-    - name: Build Debug APK Directly
-      run: gradle assembleDebug
+        cat << 'EOL' > build.gradle
+        // Root project
+        EOL
+
+    - name: Build Debug APK with Stacktrace
+      run: gradle assembleDebug --stacktrace
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
