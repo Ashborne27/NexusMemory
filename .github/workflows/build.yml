@@ -18,18 +18,21 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Set up Gradle
-      uses: gradle/actions/setup-gradle@v3
-      with:
-        cache-disabled: true
-
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
+
+    - name: Install Gradle Manually
+      run: |
+        GRADLE_VERSION=8.5
+        wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
+        unzip -q gradle-${GRADLE_VERSION}-bin.zip
+        sudo mv gradle-${GRADLE_VERSION} /opt/gradle
+        echo "/opt/gradle/bin" >> $GITHUB_PATH
 
     - name: Create Settings and Generate Wrapper
       run: |
         echo "include ':app'" > settings.gradle
-        gradle wrapper
+        gradle wrapper --gradle-version 8.5
 
     - name: Build Debug APK
       run: ./gradlew assembleDebug
