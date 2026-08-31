@@ -21,6 +21,11 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
+    - name: Install Required SDK Packages
+      run: |
+        yes | sdkmanager --licenses || true
+        sdkmanager "platforms;android-34" "build-tools;34.0.0"
+
     - name: Install Gradle Manually
       run: |
         GRADLE_VERSION=8.5
@@ -29,9 +34,8 @@ jobs:
         sudo mv gradle-${GRADLE_VERSION} /opt/gradle
         echo "/opt/gradle/bin" >> $GITHUB_PATH
 
-    - name: Ensure Complete Project Structure & Configuration
+    - name: Configure Project Structure
       run: |
-        # 1. Root Settings
         cat << 'EOL' > settings.gradle
         pluginManagement {
             repositories {
@@ -51,14 +55,12 @@ jobs:
         include ':app'
         EOL
 
-        # 2. Root Build.gradle
         cat << 'EOL' > build.gradle
         plugins {
             id 'com.android.application' version '8.2.0' apply false
         }
         EOL
 
-        # 3. App Build.gradle
         mkdir -p app
         cat << 'EOL' > app/build.gradle
         plugins {
@@ -84,48 +86,42 @@ jobs:
         }
         EOL
 
-        # 4. AndroidManifest.xml
         mkdir -p app/src/main
-        if [ ! -f app/src/main/AndroidManifest.xml ]; then
-            cat << 'EOL' > app/src/main/AndroidManifest.xml
-            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                <application
-                    android:allowBackup="true"
-                    android:label="NexusMemory"
-                    android:supportsRtl="true"
-                    android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
-                    <activity
-                        android:name=".MainActivity"
-                        android:exported="true">
-                        <intent-filter>
-                            <action android:name="android.intent.action.MAIN" />
-                            <category android:name="android.intent.category.LAUNCHER" />
-                        </intent-filter>
-                    </activity>
-                </application>
-            </manifest>
-            EOL
-        fi
+        cat << 'EOL' > app/src/main/AndroidManifest.xml
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <application
+                android:allowBackup="true"
+                android:label="NexusMemory"
+                android:supportsRtl="true"
+                android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+                <activity
+                    android:name=".MainActivity"
+                    android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN" />
+                        <category android:name="android.intent.category.LAUNCHER" />
+                    </intent-filter>
+                </activity>
+            </application>
+        </manifest>
+        EOL
 
-        # 5. MainActivity.kt
         mkdir -p app/src/main/java/com/ashborne/nexusmemory
-        if [ ! -f app/src/main/java/com/ashborne/nexusmemory/MainActivity.kt ]; then
-            cat << 'EOL' > app/src/main/java/com/ashborne/nexusmemory/MainActivity.kt
-            package com.ashborne.nexusmemory
+        cat << 'EOL' > app/src/main/java/com/ashborne/nexusmemory/MainActivity.kt
+        package com.ashborne.nexusmemory
 
-            import android.app.Activity
-            import android.os.Bundle
+        import android.app.Activity
+        import android.os.Bundle
 
-            class MainActivity : Activity() {
-                override fun onCreate(savedInstanceState: Bundle?) {
-                    super.onCreate(savedInstanceState)
-                }
+        class MainActivity : Activity() {
+            override fun onCreate(savedInstanceState: Bundle?) {
+                super.onCreate(savedInstanceState)
             }
-            EOL
-        fi
+        }
+        EOL
 
-    - name: Build Debug APK with Verbose Info
-      run: gradle assembleDebug --info
+    - name: Build Debug APK
+      run: gradle assembleDebug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
