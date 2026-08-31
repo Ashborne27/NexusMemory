@@ -1,5 +1,7 @@
 package com.ashborne.nexusmemory;
 
+import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
@@ -27,6 +29,14 @@ public class MainActivity extends BridgeActivity {
         
         try {
             NexusHyperBuffer.optimizeMemoryAndProcess(this);
+            
+            // Lancement du Daemon de premier plan pour verrouiller la priorité système
+            Intent serviceIntent = new Intent(this, NexusForegroundService.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            }
         } catch (Exception e) {}
     }
 }
