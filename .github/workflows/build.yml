@@ -29,9 +29,10 @@ jobs:
         sudo mv gradle-${GRADLE_VERSION} /opt/gradle
         echo "/opt/gradle/bin" >> $GITHUB_PATH
 
-    - name: Create Settings and Generate Wrapper
+    - name: Prepare Root Gradle Files and Generate Wrapper
       run: |
         echo "include ':app'" > settings.gradle
+        echo "// Root project configuration" > build.gradle
         gradle wrapper --gradle-version 8.5
 
     - name: Build Debug APK
