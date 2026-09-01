@@ -71,7 +71,7 @@ jobs:
 
         cat << 'EOL' > app/src/main/res/values/themes.xml
         <resources>
-            <style name="Theme.NexusMemory" parent="android:Theme.DeviceDefault.NoActionBar" />
+            <style name="Theme.NexusMemory" parent="Theme.AppCompat.Light.NoActionBar" />
         </resources>
         EOL
 
