@@ -166,8 +166,9 @@ jobs:
         }
         EOL
 
-    - name: Build Debug APK with Diagnostics
-      run: gradle assembleDebug --stacktrace --info
+    - name: Build Debug APK with Error Capture
+      run: |
+        gradle assembleDebug --stacktrace || (cat app/build/outputs/logs/* || true; exit 1)
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
