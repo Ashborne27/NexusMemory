@@ -27,7 +27,9 @@ jobs:
 
     - name: Install SDK Platforms and Build Tools
       run: |
-        sdkmanager "platforms;android-34" "build-tools;34.0.0"
+        export ANDROID_HOME=${ANDROID_SDK_ROOT:-$ANDROID_HOME}
+        echo "ANDROID_HOME is $ANDROID_HOME"
+        sdkmanager --install "platforms;android-34" "build-tools;34.0.0"
 
     - name: Install Gradle Manually
       run: |
@@ -40,7 +42,11 @@ jobs:
     - name: Configure Project Files
       run: |
         mkdir -p app/src/main/res/values app/src/main/res/layout app/src/main/java/com/ashborne/nexusmemory
-        echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+        
+        # S'assurer que le chemin SDK est correctement écrit
+        SDK_PATH="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+        echo "sdk.dir=$SDK_PATH" > local.properties
+        echo "Using sdk.dir: $SDK_PATH"
 
         cat << 'EOL' > settings.gradle
         pluginManagement {
@@ -170,7 +176,7 @@ jobs:
         EOL
 
     - name: Build Debug APK
-      run: gradle assembleDebug --stacktrace
+      run: gradle assembleDebug --stacktrace --info
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
