@@ -26,6 +26,9 @@ jobs:
         yes | sdkmanager --licenses || true
         sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+
     - name: Configure Project Files
       run: |
         mkdir -p app/src/main/res/values app/src/main/res/layout app/src/main/java/com/ashborne/nexusmemory
@@ -108,6 +111,7 @@ jobs:
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                runner:text="NexusMemory"
                 android:text="NexusMemory"
                 android:textColor="#FFFFFF"
                 android:textSize="24sp"
@@ -178,6 +182,7 @@ jobs:
                 </activity>
             </application>
         </manifest>
+        AndroidManifest.xml
         EOL
 
         cat << 'EOL' > app/src/main/java/com/ashborne/nexusmemory/MainActivity.kt
@@ -194,12 +199,8 @@ jobs:
         }
         EOL
 
-    - name: Initialize Gradle Wrapper
-      run: |
-        gradle wrapper --gradle-version 8.5
-
     - name: Build Debug APK
-      run: ./gradlew assembleDebug --stacktrace
+      run: gradle assembleDebug --stacktrace
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
