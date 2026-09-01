@@ -166,7 +166,7 @@ jobs:
         }
         EOL
 
-    - name: Build Debug APK
+    - name: Build Debug APK with Diagnostics
       run: gradle assembleDebug --stacktrace --info
 
     - name: Upload APK Artifact
