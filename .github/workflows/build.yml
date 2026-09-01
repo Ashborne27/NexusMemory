@@ -34,6 +34,7 @@ jobs:
 
     - name: Configure Project Architecture
       run: |
+        set -e
         mkdir -p app/src/main/res/values app/src/main/res/layout app/src/main/java/com/ashborne/nexusmemory
         
         SDK_PATH="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
@@ -183,7 +184,7 @@ jobs:
         }
         EOL
 
-        gradle wrapper --gradle-version 8.5
+        /opt/gradle/bin/gradle wrapper --gradle-version 8.5
 
     - name: Build Debug APK
       run: ./gradlew assembleDebug --stacktrace
