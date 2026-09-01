@@ -21,11 +21,10 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Verify Environment & Dirs
+    - name: Install SDK Platforms and Build Tools
       run: |
-        echo "ANDROID_HOME: $ANDROID_HOME"
-        echo "ANDROID_SDK_ROOT: $ANDROID_SDK_ROOT"
-        mkdir -p app/src/main/res/values app/src/main/res/layout app/src/main/java/com/ashborne/nexusmemory
+        export ANDROID_HOME=$ANDROID_SDK_ROOT
+        echo "y" | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
     - name: Install Gradle Manually
       run: |
@@ -37,6 +36,7 @@ jobs:
 
     - name: Configure Project Files
       run: |
+        mkdir -p app/src/main/res/values app/src/main/res/layout app/src/main/java/com/ashborne/nexusmemory
         echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
         cat << 'EOL' > settings.gradle
@@ -167,7 +167,7 @@ jobs:
         EOL
 
     - name: Build Debug APK
-      run: gradle assembleDebug --stacktrace
+      run: gradle assembleDebug --stacktrace --info
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
