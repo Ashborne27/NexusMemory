@@ -21,13 +21,12 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Install Gradle Manually
+    - name: Configure SDK Environment & Accept Licenses
       run: |
-        GRADLE_VERSION=8.5
-        wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
-        unzip -q gradle-${GRADLE_VERSION}-bin.zip
-        sudo mv gradle-${GRADLE_VERSION} /opt/gradle
-        echo "/opt/gradle/bin" >> $GITHUB_PATH
+        export ANDROID_HOME=$ANDROID_SDK_ROOT
+        echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+        yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        yes | $ANDROID_SDK_ROOT/cmdline-tools/bin/sdkmanager --licenses || true
 
     - name: Configure Complete Android Project
       run: |
@@ -162,8 +161,12 @@ jobs:
         }
         EOL
 
-    - name: Build Debug APK with Full Diagnostics
-      run: gradle assembleDebug --stacktrace --info
+    - name: Initialize Gradle Wrapper
+      run: |
+        gradle wrapper --gradle-version 8.5
+
+    - name: Build Debug APK with Wrapper & Diagnostics
+      run: ./gradlew assembleDebug --stacktrace --info
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
