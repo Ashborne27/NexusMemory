@@ -60,9 +60,22 @@ jobs:
         EOL
 
         cat << 'EOL' > build.gradle
-        plugins {
-            id 'com.android.application' version '8.2.0' apply false
-            id 'org.jetbrains.kotlin.android' version '1.9.20' apply false
+        buildscript {
+            repositories {
+                google()
+                mavenCentral()
+            }
+            dependencies {
+                classpath 'com.android.tools.build:gradle:8.2.0'
+                classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.20"
+            }
+        }
+
+        allprojects {
+            repositories {
+                google()
+                mavenCentral()
+            }
         }
         EOL
 
@@ -114,10 +127,8 @@ jobs:
         EOL
 
         cat << 'EOL' > app/build.gradle
-        plugins {
-            id 'com.android.application'
-            id 'org.jetbrains.kotlin.android'
-        }
+        apply plugin: 'com.android.application'
+        apply plugin: 'org.jetbrains.kotlin.android'
 
         android {
             namespace 'com.ashborne.nexusmemory'
@@ -168,7 +179,7 @@ jobs:
                 </activity>
             </application>
         </manifest>
-        EOL
+        AndroidManifest.xml
 
         cat << 'EOL' > app/src/main/java/com/ashborne/nexusmemory/MainActivity.kt
         package com.ashborne.nexusmemory
@@ -185,7 +196,7 @@ jobs:
         EOL
 
     - name: Build Debug APK
-      run: /opt/gradle/bin/gradle assembleDebug --stacktrace
+      run: /opt/gradle/bin/gradle assembleDebug --stacktrace || (find ~/.gradle -name "*.log" -exec cat {} \; && exit 1)
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
