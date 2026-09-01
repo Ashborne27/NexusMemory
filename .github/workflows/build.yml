@@ -103,6 +103,11 @@ jobs:
                 jvmTarget = '17'
             }
         }
+
+        dependencies {
+            implementation 'androidx.core:core-ktx:1.12.0'
+            implementation 'androidx.appcompat:appcompat:1.6.1'
+        }
         EOL
 
         cat << 'EOL' > app/src/main/AndroidManifest.xml
@@ -128,10 +133,10 @@ jobs:
         cat << 'EOL' > app/src/main/java/com/ashborne/nexusmemory/MainActivity.kt
         package com.ashborne.nexusmemory
 
-        import android.app.Activity
         import android.os.Bundle
+        import androidx.appcompat.app.AppCompatActivity
 
-        class MainActivity : Activity() {
+        class MainActivity : AppCompatActivity() {
             override fun onCreate(savedInstanceState: Bundle?) {
                 super.onCreate(savedInstanceState)
             }
