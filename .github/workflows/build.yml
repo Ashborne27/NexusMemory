@@ -21,7 +21,7 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Install SDK Components & Gradle
+    - name: Prepare Android SDK and Environment
       run: |
         export ANDROID_HOME=${ANDROID_SDK_ROOT:-$ANDROID_HOME}
         export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
@@ -29,13 +29,7 @@ jobs:
         yes | sdkmanager --licenses || true
         sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
-        GRADLE_VERSION=8.5
-        wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
-        unzip -q gradle-${GRADLE_VERSION}-bin.zip
-        sudo mv gradle-${GRADLE_VERSION} /opt/gradle
-        echo "/opt/gradle/bin" >> $GITHUB_PATH
-
-    - name: Configure Project Files
+    - name: Configure Project Architecture
       run: |
         mkdir -p app/src/main/res/values app/src/main/res/layout app/src/main/java/com/ashborne/nexusmemory
         
@@ -62,26 +56,9 @@ jobs:
         EOL
 
         cat << 'EOL' > build.gradle
-        buildscript {
-            repositories {
-                google()
-                mavenCentral()
-            }
-            dependencies {
-                classpath 'com.android.tools.build:gradle:8.2.0'
-                classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.20"
-            }
-        }
-
-        allprojects {
-            repositories {
-                google()
-                mavenCentral()
-            }
-        }
-
-        task clean(type: Delete) {
-            delete rootProject.buildDir
+        plugins {
+            id 'com.android.application' version '8.2.0' apply false
+            id 'org.jetbrains.kotlin.android' version '1.9.20' apply false
         }
         EOL
 
@@ -203,8 +180,11 @@ jobs:
         }
         EOL
 
-    - name: Build Debug APK
-      run: /opt/gradle/bin/gradle assembleDebug --stacktrace
+        # Initialize Gradle wrapper with version 8.5
+        gradle wrapper --gradle-version 8.5
+
+    - name: Build Debug APK with Detailed Logs
+      run: ./gradlew assembleDebug --info --stacktrace
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
