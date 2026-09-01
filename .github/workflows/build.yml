@@ -18,16 +18,19 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-
-    - name: Prepare Android SDK and Environment
+    - name: Setup Android SDK & Gradle
       run: |
         export ANDROID_HOME=${ANDROID_SDK_ROOT:-$ANDROID_HOME}
         export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
         
         yes | sdkmanager --licenses || true
         sdkmanager "platforms;android-34" "build-tools;34.0.0"
+
+        GRADLE_VERSION=8.5
+        wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
+        unzip -q gradle-${GRADLE_VERSION}-bin.zip
+        sudo mv gradle-${GRADLE_VERSION} /opt/gradle
+        echo "/opt/gradle/bin" >> $GITHUB_PATH
 
     - name: Configure Project Architecture
       run: |
@@ -180,7 +183,6 @@ jobs:
         }
         EOL
 
-        # Initialize Gradle wrapper with version 8.5
         gradle wrapper --gradle-version 8.5
 
     - name: Build Debug APK with Detailed Logs
