@@ -165,6 +165,7 @@ jobs:
       uses: gradle/gradle-build-action@v3
       with:
         arguments: assembleDebug
+        gradle-version: '8.5'
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
