@@ -18,8 +18,14 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Setup Android SDK & Install Gradle
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Install SDK Components & Gradle
       run: |
+        export ANDROID_HOME=${ANDROID_SDK_ROOT:-$ANDROID_HOME}
+        export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
+        
         yes | sdkmanager --licenses || true
         sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
@@ -169,7 +175,7 @@ jobs:
                 android:name="androidx.multidex.MultiDexApplication"
                 android:allowBackup="true"
                 android:label="@string/app_name"
-                android:supportsRtr="true"
+                android:supportsRtl="true"
                 android:theme="@style/Theme.NexusMemory">
                 <activity
                     android:name=".MainActivity"
