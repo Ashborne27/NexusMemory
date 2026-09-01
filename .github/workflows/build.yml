@@ -29,6 +29,14 @@ jobs:
       run: |
         sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
+    - name: Install Gradle Manually
+      run: |
+        GRADLE_VERSION=8.5
+        wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
+        unzip -q gradle-${GRADLE_VERSION}-bin.zip
+        sudo mv gradle-${GRADLE_VERSION} /opt/gradle
+        echo "/opt/gradle/bin" >> $GITHUB_PATH
+
     - name: Configure Project Files
       run: |
         mkdir -p app/src/main/res/values app/src/main/res/layout app/src/main/java/com/ashborne/nexusmemory
@@ -162,10 +170,7 @@ jobs:
         EOL
 
     - name: Build Debug APK
-      uses: gradle/gradle-build-action@v3
-      with:
-        arguments: assembleDebug
-        gradle-version: '8.5'
+      run: gradle assembleDebug --stacktrace
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
