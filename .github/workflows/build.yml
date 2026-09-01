@@ -62,6 +62,19 @@ jobs:
         org.gradle.jvmargs=-Xmx2048M -Dfile.encoding=UTF-8
         EOL
 
+        mkdir -p app/src/main/res/values
+        cat << 'EOL' > app/src/main/res/values/strings.xml
+        <resources>
+            <string name="app_name">NexusMemory</string>
+        </resources>
+        EOL
+
+        cat << 'EOL' > app/src/main/res/values/themes.xml
+        <resources>
+            <style name="Theme.NexusMemory" parent="android:Theme.DeviceDefault.NoActionBar" />
+        </resources>
+        EOL
+
         mkdir -p app
         cat << 'EOL' > app/build.gradle
         plugins {
@@ -92,18 +105,11 @@ jobs:
         }
         EOL
 
-        mkdir -p app/src/main/res/values
-        cat << 'EOL' > app/src/main/res/values/themes.xml
-        <resources>
-            <style name="Theme.NexusMemory" parent="android:Theme.DeviceDefault.NoActionBar" />
-        </resources>
-        EOL
-
         cat << 'EOL' > app/src/main/AndroidManifest.xml
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <application
                 android:allowBackup="true"
-                android:label="NexusMemory"
+                android:label="@string/app_name"
                 android:supportsRtl="true"
                 android:theme="@style/Theme.NexusMemory">
                 <activity
