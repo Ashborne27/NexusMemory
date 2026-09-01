@@ -28,6 +28,14 @@ jobs:
         yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses || true
         yes | $ANDROID_SDK_ROOT/cmdline-tools/bin/sdkmanager --licenses || true
 
+    - name: Install Gradle Manually
+      run: |
+        GRADLE_VERSION=8.5
+        wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
+        unzip -q gradle-${GRADLE_VERSION}-bin.zip
+        sudo mv gradle-${GRADLE_VERSION} /opt/gradle
+        echo "/opt/gradle/bin" >> $GITHUB_PATH
+
     - name: Configure Complete Android Project
       run: |
         cat << 'EOL' > settings.gradle
@@ -161,12 +169,8 @@ jobs:
         }
         EOL
 
-    - name: Initialize Gradle Wrapper
-      run: |
-        gradle wrapper --gradle-version 8.5
-
-    - name: Build Debug APK with Wrapper & Diagnostics
-      run: ./gradlew assembleDebug --stacktrace --info
+    - name: Build Debug APK with Manual Gradle & Diagnostics
+      run: gradle assembleDebug --stacktrace --info
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
