@@ -184,10 +184,8 @@ jobs:
         }
         EOL
 
-        /opt/gradle/bin/gradle wrapper --gradle-version 8.5
-
     - name: Build Debug APK
-      run: ./gradlew assembleDebug --stacktrace
+      run: /opt/gradle/bin/gradle assembleDebug --stacktrace
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
