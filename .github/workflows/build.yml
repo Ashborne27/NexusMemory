@@ -21,18 +21,13 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
+    - name: Accept Android SDK Licenses
+      run: |
+        yes | sdkmanager --licenses || true
+
     - name: Install SDK Platforms and Build Tools
       run: |
-        export ANDROID_HOME=$ANDROID_SDK_ROOT
-        echo "y" | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0"
-
-    - name: Install Gradle Manually
-      run: |
-        GRADLE_VERSION=8.5
-        wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
-        unzip -q gradle-${GRADLE_VERSION}-bin.zip
-        sudo mv gradle-${GRADLE_VERSION} /opt/gradle
-        echo "/opt/gradle/bin" >> $GITHUB_PATH
+        sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
     - name: Configure Project Files
       run: |
@@ -166,9 +161,10 @@ jobs:
         }
         EOL
 
-    - name: Build Debug APK with Error Capture
-      run: |
-        gradle assembleDebug --stacktrace || (cat app/build/outputs/logs/* || true; exit 1)
+    - name: Build Debug APK
+      uses: gradle/gradle-build-action@v3
+      with:
+        arguments: assembleDebug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
