@@ -19,12 +19,7 @@ jobs:
         java-version: '17'
 
     - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-
-    - name: Install Required SDK Packages
-      run: |
-        yes | sdkmanager --licenses || true
-        sdkmanager "platforms;android-34" "build-tools;34.0.0"
+      uses: actions/setup-android@v3
 
     - name: Install Gradle Manually
       run: |
@@ -120,8 +115,8 @@ jobs:
         }
         EOL
 
-    - name: Build Debug APK
-      run: gradle assembleDebug
+    - name: Build Debug APK with Diagnostics
+      run: gradle assembleDebug --stacktrace --info
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
