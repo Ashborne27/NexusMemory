@@ -28,7 +28,6 @@ jobs:
     - name: Install SDK Platforms and Build Tools
       run: |
         export ANDROID_HOME=${ANDROID_SDK_ROOT:-$ANDROID_HOME}
-        echo "ANDROID_HOME is $ANDROID_HOME"
         sdkmanager --install "platforms;android-34" "build-tools;34.0.0"
 
     - name: Install Gradle Manually
@@ -75,6 +74,8 @@ jobs:
         cat << 'EOL' > gradle.properties
         android.useAndroidX=true
         org.gradle.jvmargs=-Xmx2048M -Dfile.encoding=UTF-8
+        android.nonTransRClass=true
+        android.nonFinalResIds=true
         EOL
 
         cat << 'EOL' > app/src/main/res/values/strings.xml
@@ -176,16 +177,8 @@ jobs:
         }
         EOL
 
-        cat << 'EOL' > app/src/main/java/com/ashborne/nexusmemory/Dummy.java
-        package com.ashborne.nexusmemory;
-
-        public class Dummy {
-            // Force javac output directory creation to prevent dexBuilderDebug missing directory error
-        }
-        EOL
-
     - name: Build Debug APK
-      run: gradle assembleDebug --stacktrace --info
+      run: gradle assembleDebug --stacktrace
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
