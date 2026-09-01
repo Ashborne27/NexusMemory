@@ -21,13 +21,6 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Configure SDK Environment & Accept Licenses
-      run: |
-        export ANDROID_HOME=$ANDROID_SDK_ROOT
-        echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-        yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses || true
-        yes | $ANDROID_SDK_ROOT/cmdline-tools/bin/sdkmanager --licenses || true
-
     - name: Install Gradle Manually
       run: |
         GRADLE_VERSION=8.5
@@ -38,6 +31,8 @@ jobs:
 
     - name: Configure Complete Android Project
       run: |
+        echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+
         cat << 'EOL' > settings.gradle
         pluginManagement {
             repositories {
@@ -169,7 +164,7 @@ jobs:
         }
         EOL
 
-    - name: Build Debug APK with Manual Gradle & Diagnostics
+    - name: Build Debug APK with Local Properties
       run: gradle assembleDebug --stacktrace --info
 
     - name: Upload APK Artifact
