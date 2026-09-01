@@ -185,8 +185,8 @@ jobs:
 
         gradle wrapper --gradle-version 8.5
 
-    - name: Build Debug APK with Detailed Logs
-      run: ./gradlew assembleDebug --info --stacktrace
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug --stacktrace
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
