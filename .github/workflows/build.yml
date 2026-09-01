@@ -21,20 +21,18 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Accept Android SDK Licenses
+    - name: Accept Android SDK Licenses & Install Gradle
       run: |
         yes | sdkmanager --licenses || true
         sdkmanager "platforms;android-34" "build-tools;34.0.0"
-
-    - name: Install Gradle Manually
-      run: |
+        
         GRADLE_VERSION=8.5
         wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
         unzip -q gradle-${GRADLE_VERSION}-bin.zip
         sudo mv gradle-${GRADLE_VERSION} /opt/gradle
         echo "/opt/gradle/bin" >> $GITHUB_PATH
 
-    - name: Configure Project Files
+    - name: Configure Project Files & Wrapper
       run: |
         mkdir -p app/src/main/res/values app/src/main/res/layout app/src/main/java/com/ashborne/nexusmemory
         
@@ -202,8 +200,10 @@ jobs:
         }
         EOL
 
+        gradle wrapper --gradle-version 8.5
+
     - name: Build Debug APK
-      run: gradle assembleDebug --stacktrace
+      run: ./gradlew assembleDebug --stacktrace
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
