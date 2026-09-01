@@ -24,23 +24,11 @@ jobs:
     - name: Accept Android SDK Licenses
       run: |
         yes | sdkmanager --licenses || true
-
-    - name: Install SDK Platforms and Build Tools
-      run: |
-        export ANDROID_HOME=${ANDROID_SDK_ROOT:-$ANDROID_HOME}
-        sdkmanager --install "platforms;android-34" "build-tools;34.0.0"
-
-    - name: Install Gradle Manually
-      run: |
-        GRADLE_VERSION=8.5
-        wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
-        unzip -q gradle-${GRADLE_VERSION}-bin.zip
-        sudo mv gradle-${GRADLE_VERSION} /opt/gradle
-        echo "/opt/gradle/bin" >> $GITHUB_PATH
+        sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
     - name: Configure Project Files
       run: |
-        mkdir -p app/src/main/res/values app/src/main/res/layout app/src/main/java/com/ashborne/nexusmemory
+        mkdir -p app/src/main/res/values app/src/main/res/layout app/src/main/java/com/ashborne/nexusmemory app/src/main/res/drawable
         
         SDK_PATH="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
         echo "sdk.dir=$SDK_PATH" > local.properties
@@ -65,9 +53,26 @@ jobs:
         EOL
 
         cat << 'EOL' > build.gradle
-        plugins {
-            id 'com.android.application' version '8.2.0' apply false
-            id 'org.jetbrains.kotlin.android' version '1.9.20' apply false
+        buildscript {
+            repositories {
+                google()
+                mavenCentral()
+            }
+            dependencies {
+                classpath 'com.android.tools.build:gradle:8.2.0'
+                classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.20"
+            }
+        }
+
+        allprojects {
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+
+        task clean(type: Delete) {
+            delete rootProject.buildDir
         }
         EOL
 
@@ -92,19 +97,30 @@ jobs:
 
         cat << 'EOL' > app/src/main/res/layout/activity_main.xml
         <?xml version="1.0" encoding="utf-8"?>
-        <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="#121212">
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="#121212"
+            android:padding="24dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="NexusMemory Active"
+                android:text="NexusMemory"
                 android:textColor="#FFFFFF"
-                android:textSize="18sp" />
-        </FrameLayout>
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="System Active &amp; Operational"
+                android:textColor="#00E676"
+                android:textSize="16sp" />
+        </LinearLayout>
         EOL
 
         cat << 'EOL' > app/build.gradle
@@ -140,6 +156,7 @@ jobs:
             implementation 'androidx.core:core-ktx:1.12.0'
             implementation 'androidx.appcompat:appcompat:1.6.1'
             implementation 'androidx.multidex:multidex:2.0.1'
+            implementation 'com.google.android.material:material:1.11.0'
         }
         EOL
 
@@ -177,8 +194,20 @@ jobs:
         }
         EOL
 
+    - name: Install Gradle Manually
+      run: |
+        GRADLE_VERSION=8.5
+        wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
+        unzip -q gradle-${GRADLE_VERSION}-bin.zip
+        sudo mv gradle-${GRADLE_VERSION} /opt/gradle
+        echo "/opt/gradle/bin" >> $GITHUB_PATH
+
+    - name: Generate Gradle Wrapper
+      run: |
+        gradle wrapper --gradle-version 8.5
+
     - name: Build Debug APK
-      run: gradle assembleDebug --stacktrace
+      run: ./gradlew assembleDebug --stacktrace
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
