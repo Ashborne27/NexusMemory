@@ -92,14 +92,20 @@ jobs:
         }
         EOL
 
-        mkdir -p app/src/main
+        mkdir -p app/src/main/res/values
+        cat << 'EOL' > app/src/main/res/values/themes.xml
+        <resources>
+            <style name="Theme.NexusMemory" parent="android:Theme.DeviceDefault.NoActionBar" />
+        </resources>
+        EOL
+
         cat << 'EOL' > app/src/main/AndroidManifest.xml
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <application
                 android:allowBackup="true"
                 android:label="NexusMemory"
                 android:supportsRtl="true"
-                android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+                android:theme="@style/Theme.NexusMemory">
                 <activity
                     android:name=".MainActivity"
                     android:exported="true">
