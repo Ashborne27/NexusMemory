@@ -21,12 +21,17 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
+    - name: Install SDK Components & Accept Licenses
+      run: |
+        yes | sdkmanager --licenses || true
+        sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+
     - name: Install Gradle 8.4
       run: |
         wget -q https://services.gradle.org/distributions/gradle-8.4-bin.zip
         unzip -q gradle-8.4-bin.zip
         sudo mv gradle-8.4 /opt/gradle
-        sudo ln -s /opt/gradle/bin/gradle /usr/local/bin/gradle
+        sudo ln -sf /opt/gradle/bin/gradle /usr/local/bin/gradle
 
     - name: Scaffold Project Structure & Generate Wrapper
       run: |
@@ -183,7 +188,7 @@ jobs:
         echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
     - name: Build Debug APK with Wrapper
-      run: ./gradlew assembleDebug --stacktrace
+      run: ./gradlew assembleDebug --stacktrace --info
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
