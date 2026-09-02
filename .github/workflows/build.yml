@@ -31,7 +31,6 @@ jobs:
         wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
         unzip -q gradle-${GRADLE_VERSION}-bin.zip
         sudo mv gradle-${GRADLE_VERSION} /opt/gradle
-        sudo ln -sf /opt/gradle/bin/gradle /usr/local/bin/gradle
 
     - name: Scaffold Project Structure
       run: |
@@ -180,11 +179,8 @@ jobs:
         }
         EOL
 
-    - name: Generate Gradle Wrapper
-      run: gradle wrapper --gradle-version 8.4
-
-    - name: Build Debug APK with Gradle Wrapper
-      run: ./gradlew assembleDebug --stacktrace --info
+    - name: Build Debug APK with Direct Gradle Binary
+      run: /opt/gradle/bin/gradle assembleDebug --stacktrace --info
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
