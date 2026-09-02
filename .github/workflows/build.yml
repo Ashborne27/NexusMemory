@@ -26,7 +26,6 @@ jobs:
         yes | sdkmanager --licenses || true
         sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
-        # Generate local properties
         SDK_PATH="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
         echo "sdk.dir=$SDK_PATH" > local.properties
 
@@ -160,7 +159,7 @@ jobs:
                 </activity>
             </application>
         </manifest>
-        AndroidManifest
+        EOL
 
         cat << 'EOL' > app/src/main/java/com/ashborne/nexusmemory/MainActivity.kt
         package com.ashborne.nexusmemory
