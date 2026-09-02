@@ -21,6 +21,9 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+
     - name: Scaffold Project Structure
       run: |
         set -e
@@ -171,12 +174,8 @@ jobs:
         }
         EOL
 
-    - name: Initialize Gradle Wrapper
-      run: |
-        gradle wrapper --gradle-version 8.4
-
-    - name: Build Debug APK with Gradle Wrapper
-      run: ./gradlew assembleDebug --stacktrace --info
+    - name: Build Debug APK with Gradle Action
+      run: gradle assembleDebug --stacktrace --info
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
