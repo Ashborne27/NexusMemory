@@ -18,7 +18,7 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Setup Android SDK & Gradle
+    - name: Setup Android SDK & Gradle Wrapper
       run: |
         export ANDROID_HOME=${ANDROID_SDK_ROOT:-$ANDROID_HOME}
         export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
@@ -26,19 +26,14 @@ jobs:
         yes | sdkmanager --licenses || true
         sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
-        GRADLE_VERSION=8.5
-        wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
-        unzip -q gradle-${GRADLE_VERSION}-bin.zip
-        sudo mv gradle-${GRADLE_VERSION} /opt/gradle
-        echo "/opt/gradle/bin" >> $GITHUB_PATH
+        # Generate local properties
+        SDK_PATH="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+        echo "sdk.dir=$SDK_PATH" > local.properties
 
-    - name: Configure Project Architecture
+    - name: Scaffold Project Structure
       run: |
         set -e
         mkdir -p app/src/main/res/values app/src/main/res/layout app/src/main/java/com/ashborne/nexusmemory
-        
-        SDK_PATH="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
-        echo "sdk.dir=$SDK_PATH" > local.properties
 
         cat << 'EOL' > settings.gradle
         pluginManagement {
@@ -139,14 +134,6 @@ jobs:
             kotlinOptions {
                 jvmTarget = '17'
             }
-
-            sourceSets {
-                main {
-                    java.srcDirs 'src/main/java'
-                    res.srcDirs 'src/main/res'
-                    manifest.srcFile 'src/main/AndroidManifest.xml'
-                }
-            }
         }
 
         dependencies {
@@ -173,7 +160,7 @@ jobs:
                 </activity>
             </application>
         </manifest>
-        EOL
+        AndroidManifest
 
         cat << 'EOL' > app/src/main/java/com/ashborne/nexusmemory/MainActivity.kt
         package com.ashborne.nexusmemory
@@ -189,8 +176,11 @@ jobs:
         }
         EOL
 
+    - name: Initialize Gradle Wrapper
+      run: gradle wrapper --gradle-version 8.5
+
     - name: Build Debug APK
-      run: /opt/gradle/bin/gradle assembleDebug --stacktrace
+      run: ./gradlew assembleDebug --stacktrace --info
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
