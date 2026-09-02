@@ -13,25 +13,13 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Set up JDK 17
-      uses: actions/setup-java@v5
+      uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Setup Android SDK & Gradle
-      run: |
-        SDK_PATH=${ANDROID_SDK_ROOT:-$ANDROID_HOME}
-        echo "ANDROID_HOME=$SDK_PATH" >> $GITHUB_ENV
-        echo "sdk.dir=$SDK_PATH" > local.properties
-        
-        export PATH=$PATH:$SDK_PATH/cmdline-tools/latest/bin:$SDK_PATH/platform-tools
-        yes | sdkmanager --licenses || true
-        sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
-
-        GRADLE_VERSION=8.4
-        wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
-        unzip -q gradle-${GRADLE_VERSION}-bin.zip
-        sudo mv gradle-${GRADLE_VERSION} /opt/gradle
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
 
     - name: Scaffold Project Structure
       run: |
@@ -183,11 +171,12 @@ jobs:
         }
         EOL
 
-    - name: Ensure local.properties exists
-      run: echo "sdk.dir=$ANDROID_HOME" > local.properties
+    - name: Initialize Gradle Wrapper
+      run: |
+        gradle wrapper --gradle-version 8.4
 
-    - name: Build Debug APK with Direct Gradle Binary
-      run: /opt/gradle/bin/gradle assembleDebug --stacktrace --info
+    - name: Build Debug APK with Gradle Wrapper
+      run: ./gradlew assembleDebug --stacktrace --info
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
