@@ -60,22 +60,9 @@ jobs:
         EOL
 
         cat << 'EOL' > build.gradle
-        buildscript {
-            repositories {
-                google()
-                mavenCentral()
-            }
-            dependencies {
-                classpath 'com.android.tools.build:gradle:8.2.0'
-                classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.20"
-            }
-        }
-
-        allprojects {
-            repositories {
-                google()
-                mavenCentral()
-            }
+        plugins {
+            id 'com.android.application' version '8.2.0' apply false
+            id 'org.jetbrains.kotlin.android' version '1.9.20' apply false
         }
         EOL
 
@@ -127,8 +114,10 @@ jobs:
         EOL
 
         cat << 'EOL' > app/build.gradle
-        apply plugin: 'com.android.application'
-        apply plugin: 'org.jetbrains.kotlin.android'
+        plugins {
+            id 'com.android.application'
+            id 'org.jetbrains.kotlin.android'
+        }
 
         android {
             namespace 'com.ashborne.nexusmemory'
@@ -179,7 +168,7 @@ jobs:
                 </activity>
             </application>
         </manifest>
-        AndroidManifest.xml
+        EOL
 
         cat << 'EOL' > app/src/main/java/com/ashborne/nexusmemory/MainActivity.kt
         package com.ashborne.nexusmemory
