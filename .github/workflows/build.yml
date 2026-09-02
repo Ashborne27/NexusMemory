@@ -18,13 +18,19 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Setup Android SDK & Environment
+    - name: Setup Android SDK & Gradle
       run: |
         export ANDROID_HOME=${ANDROID_SDK_ROOT:-$ANDROID_HOME}
         export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
         
         yes | sdkmanager --licenses || true
         sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+        GRADLE_VERSION=8.5
+        wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
+        unzip -q gradle-${GRADLE_VERSION}-bin.zip
+        sudo mv gradle-${GRADLE_VERSION} /opt/gradle
+        echo "/opt/gradle/bin" >> $GITHUB_PATH
 
         SDK_PATH="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
         echo "sdk.dir=$SDK_PATH" > local.properties
@@ -175,13 +181,8 @@ jobs:
         }
         EOL
 
-    - name: Initialize Gradle Wrapper & Permissions
-      run: |
-        gradle wrapper --gradle-version 8.5
-        chmod +x gradlew
-
     - name: Build Debug APK
-      run: ./gradlew assembleDebug --stacktrace
+      run: /opt/gradle/bin/gradle assembleDebug --stacktrace --info
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
