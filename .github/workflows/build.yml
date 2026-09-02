@@ -20,12 +20,13 @@ jobs:
 
     - name: Setup Android SDK & Gradle
       run: |
-        export ANDROID_HOME=${ANDROID_SDK_ROOT:-$ANDROID_HOME}
-        export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
+        SDK_PATH=${ANDROID_SDK_ROOT:-$ANDROID_HOME}
+        echo "ANDROID_HOME=$SDK_PATH" >> $GITHUB_ENV
+        echo "sdk.dir=$SDK_PATH" > local.properties
         
+        export PATH=$PATH:$SDK_PATH/cmdline-tools/latest/bin:$SDK_PATH/platform-tools
         yes | sdkmanager --licenses || true
         sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
-        echo "sdk.dir=$ANDROID_HOME" > local.properties
 
         GRADLE_VERSION=8.4
         wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
@@ -178,6 +179,9 @@ jobs:
             }
         }
         EOL
+
+    - name: Ensure local.properties exists
+      run: echo "sdk.dir=$ANDROID_HOME" > local.properties
 
     - name: Build Debug APK with Direct Gradle Binary
       run: /opt/gradle/bin/gradle assembleDebug --stacktrace --info
