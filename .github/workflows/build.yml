@@ -66,10 +66,11 @@ jobs:
         }
         EOL
 
-        # MAESTRO FIX: Purge des propriétés obsolètes, optimisation de la RAM (4GB) et Garbage Collection.
         cat << 'EOL' > gradle.properties
         android.useAndroidX=true
         org.gradle.jvmargs=-Xmx4096M -Dfile.encoding=UTF-8 -XX:+UseParallelGC
+        org.gradle.parallel=true
+        org.gradle.caching=true
         EOL
 
         cat << 'EOL' > app/src/main/res/values/strings.xml
@@ -181,7 +182,7 @@ jobs:
         EOL
 
     - name: Build Debug APK
-      run: /opt/gradle/bin/gradle assembleDebug --stacktrace --no-daemon || (find ~/.gradle -name "*.log" -exec cat {} \; && exit 1)
+      run: /opt/gradle/bin/gradle assembleDebug --stacktrace
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
