@@ -21,7 +21,14 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Scaffold Project Structure
+    - name: Install Gradle 8.4
+      run: |
+        wget -q https://services.gradle.org/distributions/gradle-8.4-bin.zip
+        unzip -q gradle-8.4-bin.zip
+        sudo mv gradle-8.4 /opt/gradle
+        sudo ln -s /opt/gradle/bin/gradle /usr/local/bin/gradle
+
+    - name: Scaffold Project Structure & Generate Wrapper
       run: |
         set -e
         mkdir -p app/src/main/res/values app/src/main/res/layout app/src/main/java/com/ashborne/nexusmemory
@@ -171,16 +178,12 @@ jobs:
         }
         EOL
 
-    - name: Install Gradle 8.4
-      run: |
-        wget -q https://services.gradle.org/distributions/gradle-8.4-bin.zip
-        unzip -q gradle-8.4-bin.zip
-        sudo mv gradle-8.4 /opt/gradle
+        gradle wrapper --gradle-version 8.4
+        chmod +x gradlew
+        echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
-    - name: Build Debug APK
-      run: |
-        export PATH=$PATH:/opt/gradle/bin
-        gradle assembleDebug --stacktrace --info
+    - name: Build Debug APK with Wrapper
+      run: ./gradlew assembleDebug --stacktrace
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
