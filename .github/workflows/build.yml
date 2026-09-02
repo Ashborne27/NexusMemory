@@ -18,22 +18,16 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Setup Android SDK & Gradle
+    - name: Setup Android SDK & Build Tools
       run: |
-        export ANDROID_HOME=${ANDROID_SDK_ROOT:-$ANDROID_HOME}
-        export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
+        export ANDROID_HOME=$ANDROID_SDK_ROOT
+        echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
         
         yes | sdkmanager --licenses || true
         sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+        echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
 
-        GRADLE_VERSION=8.5
-        wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
-        unzip -q gradle-${GRADLE_VERSION}-bin.zip
-        sudo mv gradle-${GRADLE_VERSION} /opt/gradle
-        echo "/opt/gradle/bin" >> $GITHUB_PATH
-
-        SDK_PATH="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
-        echo "sdk.dir=$SDK_PATH" > local.properties
+        echo "sdk.dir=$ANDROID_HOME" > local.properties
 
     - name: Scaffold Project Structure
       run: |
@@ -61,16 +55,17 @@ jobs:
 
         cat << 'EOL' > build.gradle
         plugins {
-            id 'com.android.application' version '8.3.0' apply false
-            id 'org.jetbrains.kotlin.android' version '1.9.22' apply false
+            id 'com.android.application' version '8.2.2' apply false
+            id 'org.jetbrains.kotlin.android' version '1.9.20' apply false
         }
         EOL
 
         cat << 'EOL' > gradle.properties
         android.useAndroidX=true
-        org.gradle.jvmargs=-Xmx4096M -Dfile.encoding=UTF-8 -XX:+UseParallelGC
+        org.gradle.jvmargs=-Xmx4096M -Dfile.encoding=UTF-8
         org.gradle.parallel=true
         org.gradle.caching=true
+        android.nonTransitiveRClass=true
         EOL
 
         cat << 'EOL' > app/src/main/res/values/strings.xml
@@ -181,8 +176,13 @@ jobs:
         }
         EOL
 
-    - name: Build Debug APK
-      run: /opt/gradle/bin/gradle assembleDebug --stacktrace --info
+    - name: Build Debug APK with Gradle
+      run: |
+        GRADLE_VERSION=8.4
+        wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
+        unzip -q gradle-${GRADLE_VERSION}-bin.zip
+        sudo mv gradle-${GRADLE_VERSION} /opt/gradle
+        /opt/gradle/bin/gradle assembleDebug --stacktrace --info
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
