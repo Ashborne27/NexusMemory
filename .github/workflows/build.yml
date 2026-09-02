@@ -24,7 +24,7 @@ jobs:
         export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
         
         yes | sdkmanager --licenses || true
-        sdkmanager "platforms;android-34" "build-tools;34.0.0"
+        sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
         GRADLE_VERSION=8.5
         wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
@@ -61,8 +61,8 @@ jobs:
 
         cat << 'EOL' > build.gradle
         plugins {
-            id 'com.android.application' version '8.2.0' apply false
-            id 'org.jetbrains.kotlin.android' version '1.9.20' apply false
+            id 'com.android.application' version '8.3.0' apply false
+            id 'org.jetbrains.kotlin.android' version '1.9.22' apply false
         }
         EOL
 
@@ -71,6 +71,7 @@ jobs:
         org.gradle.jvmargs=-Xmx2048M -Dfile.encoding=UTF-8
         android.nonTransRClass=true
         android.nonFinalResIds=true
+        android.enableD8.desugaring=true
         EOL
 
         cat << 'EOL' > app/src/main/res/values/strings.xml
@@ -129,7 +130,6 @@ jobs:
                 targetSdk 34
                 versionCode 1
                 versionName "1.0"
-                multiDexEnabled true
             }
 
             compileOptions {
@@ -145,7 +145,6 @@ jobs:
         dependencies {
             implementation 'androidx.core:core-ktx:1.12.0'
             implementation 'androidx.appcompat:appcompat:1.6.1'
-            implementation 'androidx.multidex:multidex:2.0.1'
             implementation 'com.google.android.material:material:1.11.0'
         }
         EOL
@@ -153,7 +152,6 @@ jobs:
         cat << 'EOL' > app/src/main/AndroidManifest.xml
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <application
-                android:name="androidx.multidex.MultiDexApplication"
                 android:allowBackup="true"
                 android:label="@string/app_name"
                 android:supportsRtl="true"
