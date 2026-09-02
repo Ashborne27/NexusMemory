@@ -166,7 +166,6 @@ jobs:
                 </activity>
             </application>
         </manifest>
-        AndroidManifest.xml
         EOL
 
         cat << 'EOL' > app/src/main/java/com/ashborne/nexusmemory/MainActivity.kt
@@ -185,9 +184,8 @@ jobs:
 
         echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
-    - name: Build Debug APK with Error Logging
-      run: |
-        /opt/gradle/bin/gradle assembleDebug --stacktrace || (echo "=== GRADLE BUILD FAILED ===" && exit 1)
+    - name: Build Debug APK
+      run: /opt/gradle/bin/gradle assembleDebug --stacktrace
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
