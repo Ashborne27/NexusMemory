@@ -1,44 +1,16 @@
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.ashborne.nexusmemory">
-
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:allowBackup="false"
-        android:icon="@mipmap/ic_launcher"
-        android:label="NexusMemory"
-        android:roundIcon="@mipmap/ic_launcher"
+        android:allowBackup="true"
+        android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
-
-        <!-- Activité Principale / Conteneur -->
+        android:theme="@style/Theme.NexusMemory">
         <activity
             android:name=".MainActivity"
-            android:exported="true"
-            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <!-- Récepteur des Privilèges d'Administration (Device Owner / Container Manager) -->
-        <receiver
-            android:name=".NexusDeviceAdminReceiver"
-            android:description="@string/device_admin_description"
-            android:label="NexusMemory Controler"
-            android:permission="android.permission.BIND_DEVICE_ADMIN"
-            android:exported="true">
-            <meta-data
-                android:name="android.app.device_admin"
-                android:resource="@xml/device_admin_policies" />
-            <intent-filter>
-                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
-                <action android:name="android.app.action.PROFILE_PROVISIONING_COMPLETE" />
-            </intent-filter>
-        </receiver>
-
     </application>
 </manifest>

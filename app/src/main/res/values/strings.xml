@@ -1,3 +1,3 @@
 <resources>
-    <string name="device_admin_description">Permet à NexusMemory de superviser et d'isoler son conteneur d'applications en toute souveraineté.</string>
+    <string name="app_name">NexusMemory</string>
 </resources>
