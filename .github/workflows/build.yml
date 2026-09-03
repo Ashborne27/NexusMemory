@@ -26,12 +26,13 @@ jobs:
         yes | sdkmanager --licenses || true
         sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 
-    - name: Build with Official Gradle Action (Cache Disabled)
+    - name: Setup Gradle Wrapper Action
       uses: gradle/actions/setup-gradle@v3
       with:
-        gradle-version: '8.4'
         cache-disabled: true
-        arguments: assembleDebug --stacktrace
+
+    - name: Build Debug APK with Wrapper
+      run: ./gradlew assembleDebug --stacktrace
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
