@@ -21,20 +21,10 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Configure Android SDK Licenses & Environment
+    - name: Validate Android SDK & Accept Licenses
       run: |
-        mkdir -p $ANDROID_SDK_ROOT/licenses
-        echo "24333f8a43b681621c8ab0ba125f87c716a6caaa" > $ANDROID_SDK_ROOT/licenses/android-sdk-license
-        echo "d56f5187479451eabf01fb78af6dfcb139a648b0" >> $ANDROID_SDK_ROOT/licenses/android-sdk-license
-        
-        yes | sdkmanager --sdk_root=${ANDROID_SDK_ROOT} --licenses || true
-        sdkmanager --sdk_root=${ANDROID_SDK_ROOT} "platforms;android-34" "build-tools;34.0.0" "platform-tools"
-
-    - name: Install Gradle 8.4
-      run: |
-        wget -q https://services.gradle.org/distributions/gradle-8.4-bin.zip
-        unzip -q gradle-8.4-bin.zip
-        sudo mv gradle-8.4 /opt/gradle
+        yes | sdkmanager --licenses || true
+        sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 
     - name: Scaffold Project Structure
       run: |
@@ -185,8 +175,13 @@ jobs:
 
         echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
+    - name: Setup Gradle
+      uses: actions/gradle-build-action@v3
+      with:
+        gradle-version: '8.4'
+
     - name: Build Debug APK
-      run: /opt/gradle/bin/gradle assembleDebug --stacktrace
+      run: gradle assembleDebug --stacktrace
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
