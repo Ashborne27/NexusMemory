@@ -3,12 +3,13 @@ package com.ashborne.nexusmemory
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
-import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -22,7 +23,13 @@ class MainActivity : AppCompatActivity() {
         val titleInput = findViewById<EditText>(R.id.etTitle)
         val contentInput = findViewById<EditText>(R.id.etContent)
         val saveButton = findViewById<Button>(R.id.btnSave)
-        val outputText = findViewById<TextView>(R.id.tvOutput)
+        val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
+
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        val adapter = MemoryAdapter { memory ->
+            viewModel.deleteMemory(memory)
+        }
+        recyclerView.adapter = adapter
 
         saveButton.setOnClickListener {
             val title = titleInput.text.toString().trim()
@@ -37,15 +44,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.allMemories.collect { memories ->
-                    if (memories.isEmpty()) {
-                        outputText.text = "NexusMemory v2.2\nAucun souvenir enregistré."
-                    } else {
-                        val sb = StringBuilder("NexusMemory v2.2 - Souvenirs (${memories.size}):\n\n")
-                        for (m in memories) {
-                            sb.append("• ${m.title}: ${m.content}\n")
-                        }
-                        outputText.text = sb.toString()
-                    }
+                    adapter.submitList(memories)
                 }
             }
         }
