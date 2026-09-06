@@ -1,6 +1,8 @@
 package com.ashborne.nexusmemory
 
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.widget.Button
 import android.widget.EditText
 import androidx.activity.viewModels
@@ -23,6 +25,7 @@ class MainActivity : AppCompatActivity() {
         val titleInput = findViewById<EditText>(R.id.etTitle)
         val contentInput = findViewById<EditText>(R.id.etContent)
         val saveButton = findViewById<Button>(R.id.btnSave)
+        val searchInput = findViewById<EditText>(R.id.etSearch)
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
 
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -40,6 +43,14 @@ class MainActivity : AppCompatActivity() {
                 contentInput.text.clear()
             }
         }
+
+        searchInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count) {
+                viewModel.setSearchQuery(s?.toString() ?: "")
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {

@@ -12,6 +12,9 @@ interface MemoryDao {
     @Query("SELECT * FROM memories ORDER BY timestamp DESC")
     fun getAllMemories(): Flow<List<MemoryEntity>>
 
+    @Query("SELECT * FROM memories WHERE title LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%' ORDER BY timestamp DESC")
+    fun searchMemories(query: String): Flow<List<MemoryEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMemory(memory: MemoryEntity)
 

@@ -8,7 +8,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="NexusMemory v2.3"
+        android:text="NexusMemory v2.4"
         android:textSize="22sp"
         android:textStyle="bold"
         android:paddingBottom="12dp" />
@@ -33,7 +33,15 @@
         android:layout_height="wrap_content"
         android:text="Enregistrer"
         android:layout_marginTop="8dp"
-        android:layout_marginBottom="12dp" />
+        android:layout_marginBottom="8dp" />
+
+    <EditText
+        android:id="@+id/etSearch"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Rechercher un souvenir..."
+        android:inputType="text"
+        android:layout_marginBottom="8dp" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
