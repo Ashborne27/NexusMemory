@@ -1,63 +1,40 @@
 package com.ashborne.nexusmemory
 
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
-import android.widget.Button
-import android.widget.EditText
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import com.ashborne.nexusmemory.ui.theme.NexusMemoryTheme
+import com.ashborne.nexusmemory.viewmodel.MemoryViewModel
 
-class MainActivity : AppCompatActivity() {
-
+class MainActivity : ComponentActivity() {
     private val viewModel: MemoryViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        val titleInput = findViewById<EditText>(R.id.etTitle)
-        val contentInput = findViewById<EditText>(R.id.etContent)
-        val saveButton = findViewById<Button>(R.id.btnSave)
-        val searchInput = findViewById<EditText>(R.id.etSearch)
-        val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
-
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        val adapter = MemoryAdapter { memory ->
-            viewModel.deleteMemory(memory)
-        }
-        recyclerView.adapter = adapter
-
-        saveButton.setOnClickListener {
-            val title = titleInput.text.toString().trim()
-            val content = contentInput.text.toString().trim()
-            if (title.isNotEmpty() && content.isNotEmpty()) {
-                viewModel.addMemory(title, content)
-                titleInput.text.clear()
-                contentInput.text.clear()
-            }
-        }
-
-        searchInput.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count) {
-                viewModel.setSearchQuery(s?.toString() ?: "")
-            }
-            override fun afterTextChanged(s: Editable?) {}
-        })
-
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.allMemories.collect { memories ->
-                    adapter.submitList(memories)
+        setContent {
+            NexusMemoryTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    MainScreen(viewModel = viewModel)
                 }
             }
         }
+    }
+}
+
+@Composable
+fun MainScreen(viewModel: MemoryViewModel) {
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Text(text = "NexusMemory Active", modifier = Modifier.padding(16.dp))
     }
 }
