@@ -4,25 +4,23 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class MemoryViewModel(application: Application) : AndroidViewModel(application) {
-    private val dao = AppDatabase.getDatabase(application).memoryDao()
+    private val database: AppDatabase = AppDatabase.getDatabase(application)
+    private val memoryDao: MemoryDao = database.memoryDao()
 
     private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     val allMemories: StateFlow<List<MemoryEntity>> = _searchQuery
-        .flatMapLatest { query ->
+        .flatMapLatest { query: String ->
             if (query.isBlank()) {
-                dao.getAllMemories()
+                memoryDao.getAllMemories()
             } else {
-                dao.searchMemories("%$query%")
+                memoryDao.searchMemories(query)
             }
         }
         .stateIn(
@@ -37,13 +35,13 @@ class MemoryViewModel(application: Application) : AndroidViewModel(application) 
 
     fun addMemory(title: String, content: String) {
         viewModelScope.launch {
-            dao.insertMemory(MemoryEntity(title = title, content = content))
+            memoryDao.insertMemory(MemoryEntity(title = title, content = content))
         }
     }
 
     fun deleteMemory(memory: MemoryEntity) {
         viewModelScope.launch {
-            dao.deleteMemory(memory)
+            memoryDao.deleteMemory(memory)
         }
     }
 }

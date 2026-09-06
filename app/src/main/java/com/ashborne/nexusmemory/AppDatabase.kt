@@ -18,7 +18,7 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "nexus_memory_db"
+                    "nexus_memory_database"
                 ).build()
                 INSTANCE = instance
                 instance
