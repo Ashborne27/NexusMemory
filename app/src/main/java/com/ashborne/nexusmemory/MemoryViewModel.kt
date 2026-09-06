@@ -22,7 +22,7 @@ class MemoryViewModel(application: Application) : AndroidViewModel(application) 
             if (query.isBlank()) {
                 dao.getAllMemories()
             } else {
-                dao.searchMemories(query)
+                dao.searchMemories("%$query%")
             }
         }
         .stateIn(
