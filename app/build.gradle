@@ -5,6 +5,9 @@ plugins {
 }
 
 android {
+    buildFeatures {
+        compose true
+    }
     namespace 'com.ashborne.nexusmemory'
     compileSdk 34
 
