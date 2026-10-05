@@ -6,19 +6,19 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(entities = [MemoryEntity::class], version = 1, exportSchema = false)
-abstract class AppDatabase : RoomDatabase() {
+abstract class MemoryDatabase : RoomDatabase() {
     abstract fun memoryDao(): MemoryDao
 
     companion object {
         @Volatile
-        private var INSTANCE: AppDatabase? = null
+        private var INSTANCE: MemoryDatabase? = null
 
-        fun getDatabase(context: Context): AppDatabase {
+        fun getDatabase(context: Context): MemoryDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
-                    AppDatabase::class.java,
-                    "nexus_memory_database"
+                    MemoryDatabase::class.java,
+                    "nexus_memory_db"
                 ).build()
                 INSTANCE = instance
                 instance

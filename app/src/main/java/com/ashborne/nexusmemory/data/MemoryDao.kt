@@ -1,19 +1,16 @@
 package com.ashborne.nexusmemory.data
 
-import androidx.lifecycle.LiveData
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MemoryDao {
     @Query("SELECT * FROM memories ORDER BY timestamp DESC")
-    fun getAllMemories(): LiveData<List<MemoryEntity>>
+    fun getAllMemories(): Flow<List<MemoryEntity>>
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMemory(memory: MemoryEntity)
-
-    @Delete
-    suspend fun deleteMemory(memory: MemoryEntity)
 }

@@ -1,37 +1,49 @@
 package com.ashborne.nexusmemory
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.ashborne.nexusmemory.ui.theme.NexusMemoryTheme
+import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
+import com.ashborne.nexusmemory.data.AppDatabase
+import com.ashborne.nexusmemory.data.MemoryEntity
+import com.ashborne.nexusmemory.ui.security.BiometricAuthManager
+import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
-    private val viewModel: MemoryViewModel by viewModels()
+class MainActivity : FragmentActivity() {
+
+    private lateinit var biometricAuthManager: BiometricAuthManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        biometricAuthManager = BiometricAuthManager(this)
+        val database = AppDatabase.getDatabase(this)
+        val dao = database.memoryDao()
+
         setContent {
-            NexusMemoryTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    MainScreen(viewModel = viewModel)
-                }
+            MaterialTheme {
+                val memoriesList by dao.getAllMemories().collectAsState(initial = emptyList())
+                NexusApp(
+                    biometricAuthManager = biometricAuthManager,
+                    memories = memoriesList,
+                    onAddThought = { text, category ->
+                        lifecycleScope.launch {
+                            dao.insertMemory(MemoryEntity(text = text, category = category))
+                        }
+                    }
+                )
             }
         }
     }
@@ -39,114 +51,142 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(viewModel: MemoryViewModel) {
-    val memories by viewModel.allMemories.collectAsStateWithLifecycle()
+fun NexusApp(
+    biometricAuthManager: BiometricAuthManager,
+    memories: List<MemoryEntity>,
+    onAddThought: (String, String) -> Unit
+) {
+    var isUnlocked by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
-    var showDialog by remember { mutableStateOf(false) }
-    var newTitle by remember { mutableStateOf("") }
-    var newContent by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf("Tous") }
+    var newThoughtText by remember { mutableStateOf("") }
+
+    val categories = listOf("Tous", "Général", "Pro", "Personnel")
+
+    val filteredMemories = memories.filter { item ->
+        val matchesCategory = (selectedCategory == "Tous" || item.category == selectedCategory)
+        val matchesQuery = item.text.contains(searchQuery, ignoreCase = true)
+        matchesCategory && matchesQuery
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("NexusMemory v2.4") }
+                title = { Text("NexusMemory v6.3") },
+                actions = {
+                    IconButton(onClick = {
+                        if (isUnlocked) {
+                            isUnlocked = false
+                        } else {
+                            if (biometricAuthManager.canAuthenticate()) {
+                                biometricAuthManager.authenticate(
+                                    onSuccess = { isUnlocked = true },
+                                    onError = { }
+                                )
+                            } else {
+                                isUnlocked = true
+                            }
+                        }
+                    }) {
+                        Icon(
+                            imageVector = if (isUnlocked) Icons.Default.Lock else Icons.Default.Lock,
+                            contentDescription = "Verrou biométrique"
+                        )
+                    }
+                }
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { showDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Ajouter une mémoire")
-            }
         }
-    ) { paddingValues: PaddingValues ->
+    ) { innerPadding ->
         Column(
             modifier = Modifier
+                .padding(innerPadding)
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             OutlinedTextField(
                 value = searchQuery,
-                onValueChange = { query: String ->
-                    searchQuery = query
-                    viewModel.setSearchQuery(query)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Rechercher dans les mémoires...") },
+                onValueChange = { searchQuery = it },
+                label = { Text("Rechercher une pensée...") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                singleLine = true
+                modifier = Modifier.fillMaxWidth()
             )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 4.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(categories) { category ->
+                    FilterChip(
+                        selected = (selectedCategory == category),
+                        onClick = { selectedCategory = category },
+                        label = { Text(category) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = newThoughtText,
+                    onValueChange = { newThoughtText = it },
+                    label = { Text("Nouvelle pensée") },
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(onClick = {
+                    if (newThoughtText.isNotBlank()) {
+                        val categoryToAssign = if (selectedCategory == "Tous") "Général" else selectedCategory
+                        onAddThought(newThoughtText, categoryToAssign)
+                        newThoughtText = ""
+                    }
+                }) {
+                    Text("Ajouter")
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(memories, key = { memory: MemoryEntity -> memory.id }) { memory: MemoryEntity ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(text = memory.title, style = MaterialTheme.typography.titleMedium)
+            if (!isUnlocked) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Coffre verrouillé. Appuyez sur le cadenas pour l'authentification biométrique.")
+                }
+            } else if (filteredMemories.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Aucune mémoire enregistrée.")
+                }
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(filteredMemories) { memory ->
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(text = memory.text, style = MaterialTheme.typography.bodyLarge)
                                 Spacer(modifier = Modifier.height(4.dp))
-                                Text(text = memory.content, style = MaterialTheme.typography.bodyMedium)
-                            }
-                            IconButton(onClick = { viewModel.deleteMemory(memory) }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Supprimer", tint = MaterialTheme.colorScheme.error)
+                                Text(
+                                    text = "Catégorie : ${memory.category}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
                             }
                         }
                     }
                 }
             }
-        }
-
-        if (showDialog) {
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                title = { Text("Nouvelle Mémoire") },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = newTitle,
-                            onValueChange = { value: String -> newTitle = value },
-                            label = { Text("Titre") },
-                            singleLine = true
-                        )
-                        OutlinedTextField(
-                            value = newContent,
-                            onValueChange = { value: String -> newContent = value },
-                            label = { Text("Contenu") }
-                        )
-                    }
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            if (newTitle.isNotBlank() && newContent.isNotBlank()) {
-                                viewModel.addMemory(newTitle, newContent)
-                                newTitle = ""
-                                newContent = ""
-                                showDialog = false
-                            }
-                        }
-                    ) {
-                        Text("Ajouter")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDialog = false }) {
-                        Text("Annuler")
-                    }
-                }
-            )
         }
     }
 }

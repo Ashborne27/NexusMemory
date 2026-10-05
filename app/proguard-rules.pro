@@ -1,0 +1,4 @@
+-keep class com.ashborne.nexusmemory.MemoryEntity { *; }
+-keepclassmembers class com.ashborne.nexusmemory.MemoryEntity { *; }
+-keep class * extends androidx.room.RoomDatabase
+-dontwarn androidx.room.paging.**
