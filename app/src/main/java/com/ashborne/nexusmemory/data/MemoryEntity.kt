@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 data class MemoryEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val text: String,
-    val category: String,
+    val category: String = "Général",
+    val isProtected: Boolean = false,
     val timestamp: Long = System.currentTimeMillis()
 )
