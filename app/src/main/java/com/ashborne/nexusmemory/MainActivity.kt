@@ -1,191 +1,104 @@
 package com.ashborne.nexusmemory
 
+import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.lifecycleScope
-import com.ashborne.nexusmemory.data.AppDatabase
-import com.ashborne.nexusmemory.data.MemoryEntity
-import com.ashborne.nexusmemory.ui.security.BiometricAuthManager
-import kotlinx.coroutines.launch
+import com.ashborne.nexusmemory.viewmodel.MemoryViewModel
+import java.io.File
 
-class MainActivity : FragmentActivity() {
+class MainActivity : ComponentActivity() {
 
-    private lateinit var biometricAuthManager: BiometricAuthManager
+    private val viewModel: MemoryViewModel by viewModels()
+
+    // Launcher pour la création du fichier d'export .nexus
+    private val exportLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri: Uri? ->
+        uri?.let { targetUri ->
+            contentResolver.openOutputStream(targetUri)?.use { outputStream ->
+                val tempFile = File(cacheDir, "temp_export.nexus")
+                viewModel.exportBackup(this, tempFile) { success ->
+                    if (success) {
+                        outputStream.write(tempFile.readBytes())
+                        tempFile.delete()
+                        Toast.makeText(this, "Exportation v6.4 réussie", Toast.LENGTH_LONG).show()
+                    } else {
+                        Toast.makeText(this, "Échec de l'exportation", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
+    }
+
+    // Launcher pour l'ouverture du fichier d'import .nexus
+    private val importLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let { targetUri ->
+            contentResolver.openInputStream(targetUri)?.use { inputStream ->
+                val tempFile = File(cacheDir, "temp_import.nexus")
+                tempFile.writeBytes(inputStream.readBytes())
+                viewModel.importBackup(this, tempFile) { result ->
+                    tempFile.delete()
+                    result.onSuccess { count ->
+                        Toast.makeText(this, "$count pensées restaurées", Toast.LENGTH_LONG).show()
+                    }.onFailure {
+                        Toast.makeText(this, "Restauration échouée : fichier corrompu", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        biometricAuthManager = BiometricAuthManager(this)
-        val database = AppDatabase.getDatabase(this)
-        val dao = database.memoryDao()
-
         setContent {
-            MaterialTheme {
-                val memoriesList by dao.getAllMemories().collectAsState(initial = emptyList())
-                NexusApp(
-                    biometricAuthManager = biometricAuthManager,
-                    memories = memoriesList,
-                    onAddThought = { text, category ->
-                        lifecycleScope.launch {
-                            dao.insertMemory(MemoryEntity(text = text, category = category))
-                        }
-                    }
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                MainScreen(
+                    onExportClick = { exportLauncher.launch("NexusMemory-Vault.nexus") },
+                    onImportClick = { importLauncher.launch(arrayOf("*/*")) }
                 )
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NexusApp(
-    biometricAuthManager: BiometricAuthManager,
-    memories: List<MemoryEntity>,
-    onAddThought: (String, String) -> Unit
+fun MainScreen(
+    onExportClick: () -> Unit,
+    onImportClick: () -> Unit
 ) {
-    var isUnlocked by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf("Tous") }
-    var newThoughtText by remember { mutableStateOf("") }
-
-    val categories = listOf("Tous", "Général", "Pro", "Personnel")
-
-    val filteredMemories = memories.filter { item ->
-        val matchesCategory = (selectedCategory == "Tous" || item.category == selectedCategory)
-        val matchesQuery = item.text.contains(searchQuery, ignoreCase = true)
-        matchesCategory && matchesQuery
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("NexusMemory v6.4") },
-                actions = {
-                    IconButton(onClick = {
-                        if (isUnlocked) {
-                            isUnlocked = false
-                        } else {
-                            if (biometricAuthManager.canAuthenticate()) {
-                                biometricAuthManager.authenticate(
-                                    onSuccess = { isUnlocked = true },
-                                    onError = { }
-                                )
-                            } else {
-                                isUnlocked = true
-                            }
-                        }
-                    }) {
-                        Icon(
-                            imageVector = if (isUnlocked) Icons.Default.Lock else Icons.Default.Lock,
-                            contentDescription = "Verrou biométrique"
-                        )
-                    }
-                }
-            )
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = "NexusMemory v6.4",
+            style = MaterialTheme.typography.headlineMedium
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                label = { Text("Rechercher une pensée...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(horizontal = 4.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                items(categories) { category ->
-                    FilterChip(
-                        selected = (selectedCategory == category),
-                        onClick = { selectedCategory = category },
-                        label = { Text(category) }
-                    )
-                }
+            Button(onClick = onExportClick) {
+                Text("Exporter (.nexus)")
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = newThoughtText,
-                    onValueChange = { newThoughtText = it },
-                    label = { Text("Nouvelle pensée") },
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = {
-                    if (newThoughtText.isNotBlank()) {
-                        val categoryToAssign = if (selectedCategory == "Tous") "Général" else selectedCategory
-                        onAddThought(newThoughtText, categoryToAssign)
-                        newThoughtText = ""
-                    }
-                }) {
-                    Text("Ajouter")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            if (!isUnlocked) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Coffre verrouillé. Appuyez sur le cadenas pour l'authentification biométrique.")
-                }
-            } else if (filteredMemories.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Aucune mémoire enregistrée.")
-                }
-            } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(filteredMemories) { memory ->
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(text = memory.text, style = MaterialTheme.typography.bodyLarge)
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Catégorie : ${memory.category}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.secondary
-                                )
-                            }
-                        }
-                    }
-                }
+            Button(onClick = onImportClick) {
+                Text("Importer (.nexus)")
             }
         }
     }
