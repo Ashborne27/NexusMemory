@@ -19,7 +19,6 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: MemoryViewModel by viewModels()
 
-    // Launcher pour la création du fichier d'export .nexus
     private val exportLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
     ) { uri: Uri? ->
@@ -30,7 +29,7 @@ class MainActivity : ComponentActivity() {
                     if (success) {
                         outputStream.write(tempFile.readBytes())
                         tempFile.delete()
-                        Toast.makeText(this, "Exportation v6.4 réussie", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, "Exportation réussie", Toast.LENGTH_LONG).show()
                     } else {
                         Toast.makeText(this, "Échec de l'exportation", Toast.LENGTH_LONG).show()
                     }
@@ -39,7 +38,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Launcher pour l'ouverture du fichier d'import .nexus
     private val importLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
@@ -52,7 +50,7 @@ class MainActivity : ComponentActivity() {
                     result.onSuccess { count ->
                         Toast.makeText(this, "$count pensées restaurées", Toast.LENGTH_LONG).show()
                     }.onFailure {
-                        Toast.makeText(this, "Restauration échouée : fichier corrompu", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, "Restauration échouée", Toast.LENGTH_LONG).show()
                     }
                 }
             }
@@ -89,15 +87,21 @@ fun MainScreen(
             text = "NexusMemory v6.4",
             style = MaterialTheme.typography.headlineMedium
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Button(onClick = onExportClick) {
+            Button(
+                onClick = onExportClick,
+                modifier = Modifier.weight(1f)
+            ) {
                 Text("Exporter (.nexus)")
             }
-            Button(onClick = onImportClick) {
+            Button(
+                onClick = onImportClick,
+                modifier = Modifier.weight(1f)
+            ) {
                 Text("Importer (.nexus)")
             }
         }
