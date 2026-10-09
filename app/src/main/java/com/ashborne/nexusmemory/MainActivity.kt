@@ -72,7 +72,7 @@ fun NexusApp(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("NexusMemory v6.3") },
+                title = { Text("NexusMemory v6.4") },
                 actions = {
                     IconButton(onClick = {
                         if (isUnlocked) {
