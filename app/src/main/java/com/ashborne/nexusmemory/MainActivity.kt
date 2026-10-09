@@ -3,7 +3,6 @@ package com.ashborne.nexusmemory
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -16,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -23,6 +23,7 @@ import com.ashborne.nexusmemory.data.AppDatabase
 import com.ashborne.nexusmemory.data.MemoryDao
 import com.ashborne.nexusmemory.data.MemoryEntity
 import com.ashborne.nexusmemory.security.AutoLockManager
+import com.ashborne.nexusmemory.security.BiometricAuthManager
 import com.ashborne.nexusmemory.viewmodel.MemoryViewModel
 import java.io.File
 import java.text.SimpleDateFormat
@@ -38,7 +39,7 @@ class MemoryViewModelFactory(private val dao: MemoryDao) : ViewModelProvider.Fac
     }
 }
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
 
     private val viewModel: MemoryViewModel by viewModels {
         val db = AppDatabase.getDatabase(applicationContext)
@@ -55,9 +56,9 @@ class MainActivity : ComponentActivity() {
                     if (success) {
                         outputStream.write(tempFile.readBytes())
                         tempFile.delete()
-                        Toast.makeText(this, "Sauvegarde .nexus créée", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, "Sauvegarde .nexus v6.6 exportée", Toast.LENGTH_LONG).show()
                     } else {
-                        Toast.makeText(this, "Erreur d'exportation", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, "Échec de l'exportation", Toast.LENGTH_LONG).show()
                     }
                 }
             }
@@ -76,7 +77,7 @@ class MainActivity : ComponentActivity() {
                     result.onSuccess { count ->
                         Toast.makeText(this, "$count pensées restaurées", Toast.LENGTH_LONG).show()
                     }.onFailure {
-                        Toast.makeText(this, "Fichier corrompu ou clé invalide", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, "Restauration échouée", Toast.LENGTH_LONG).show()
                     }
                 }
             }
@@ -95,7 +96,19 @@ class MainActivity : ComponentActivity() {
                 color = MaterialTheme.colorScheme.background
             ) {
                 if (isLocked) {
-                    LockedScreen(onUnlock = { AutoLockManager.unlockVault() })
+                    LockedScreen(
+                        onUnlock = {
+                            if (BiometricAuthManager.canAuthenticate(this)) {
+                                BiometricAuthManager.authenticate(
+                                    activity = this,
+                                    onSuccess = { AutoLockManager.unlockVault() },
+                                    onError = { err -> Toast.makeText(this, err, Toast.LENGTH_SHORT).show() }
+                                )
+                            } else {
+                                AutoLockManager.unlockVault()
+                            }
+                        }
+                    )
                 } else {
                     MainVaultScreen(
                         viewModel = viewModel,
@@ -120,10 +133,10 @@ fun LockedScreen(onUnlock: () -> Unit) {
     ) {
         Text("Coffre Verrouillé", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(8.dp))
-        Text("Protection matérielle active (AES-256-GCM)", style = MaterialTheme.typography.bodyMedium)
+        Text("Garde biométrique & protection AES-256 active", style = MaterialTheme.typography.bodyMedium)
         Spacer(modifier = Modifier.height(24.dp))
         Button(onClick = onUnlock) {
-            Text("Déverrouiller le coffre")
+            Text("Déverrouillage Biométrique")
         }
     }
 }
@@ -158,7 +171,7 @@ fun MainVaultScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("NexusMemory v6.5", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
+            Text("NexusMemory v6.6", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
             Button(onClick = onLockClick, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)) {
                 Text("Verrouiller")
             }
@@ -183,7 +196,7 @@ fun MainVaultScreen(
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            label = { Text("Rechercher une pensée...") },
+            label = { Text("Recherche FTS4 rapide...") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )

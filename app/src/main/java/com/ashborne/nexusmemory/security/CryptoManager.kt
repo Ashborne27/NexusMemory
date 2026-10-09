@@ -2,15 +2,22 @@ package com.ashborne.nexusmemory.security
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
+import android.util.Base64
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
-class CryptoManager {
+object CryptoManager {
+    private const val KEY_ALIAS = "NexusMemoryKeyAlias"
+    private const val ALGORITHM = KeyProperties.KEY_ALGORITHM_AES
+    private const val BLOCK_MODE = KeyProperties.BLOCK_MODE_GCM
+    private const val PADDING = KeyProperties.ENCRYPTION_PADDING_NONE
+    private const val TRANSFORMATION = "$ALGORITHM/$BLOCK_MODE/$PADDING"
+    private const val TAG_LENGTH = 128
 
-    private val keyStore = KeyStore.getInstance("AndroidKeyStore").apply {
+    private val keyStore: KeyStore = KeyStore.getInstance("AndroidKeyStore").apply {
         load(null)
     }
 
@@ -20,19 +27,16 @@ class CryptoManager {
     }
 
     private fun createKey(): SecretKey {
-        return KeyGenerator.getInstance(
-            KeyProperties.KEY_ALGORITHM_AES,
-            "AndroidKeyStore"
-        ).apply {
+        return KeyGenerator.getInstance(ALGORITHM, "AndroidKeyStore").apply {
             init(
                 KeyGenParameterSpec.Builder(
                     KEY_ALIAS,
                     KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
                 )
-                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                .setKeySize(256)
-                .build()
+                    .setBlockModes(BLOCK_MODE)
+                    .setEncryptionPaddings(PADDING)
+                    .setKeySize(256)
+                    .build()
             )
         }.generateKey()
     }
@@ -42,20 +46,26 @@ class CryptoManager {
         cipher.init(Cipher.ENCRYPT_MODE, getKey())
         val iv = cipher.iv
         val encryptedBytes = cipher.doFinal(bytes)
-        return byteArrayOf(iv.size.toByte()) + iv + encryptedBytes
+        return iv + encryptedBytes
     }
 
     fun decrypt(bytes: ByteArray): ByteArray {
-        val ivSize = bytes[0].toInt()
-        val iv = bytes.copyOfRange(1, 1 + ivSize)
-        val encryptedBytes = bytes.copyOfRange(1 + ivSize, bytes.size)
+        val iv = bytes.copyOfRange(0, 12)
+        val encryptedBytes = bytes.copyOfRange(12, bytes.size)
         val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.DECRYPT_MODE, getKey(), GCMParameterSpec(128, iv))
+        val spec = GCMParameterSpec(TAG_LENGTH, iv)
+        cipher.init(Cipher.DECRYPT_MODE, getKey(), spec)
         return cipher.doFinal(encryptedBytes)
     }
 
-    companion object {
-        private const val KEY_ALIAS = "nexus_memory_vault_key"
-        private const val TRANSFORMATION = "AES/GCM/NoPadding"
+    fun encryptToString(plainText: String): String {
+        val encrypted = encrypt(plainText.toByteArray(Charsets.UTF_8))
+        return Base64.encodeToString(encrypted, Base64.NO_WRAP)
+    }
+
+    fun decryptFromString(encryptedStr: String): String {
+        val decoded = Base64.decode(encryptedStr, Base64.NO_WRAP)
+        val decrypted = decrypt(decoded)
+        return String(decrypted, Charsets.UTF_8)
     }
 }
