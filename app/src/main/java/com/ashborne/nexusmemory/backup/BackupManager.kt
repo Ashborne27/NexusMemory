@@ -28,7 +28,8 @@ object BackupManager {
                     jsonArray.put(obj)
                 }
                 val rawJson = jsonArray.toString()
-                val encryptedBytes = CryptoManager.encrypt(rawJson.toByteArray(Charsets.UTF_8))
+                // Utilisation du chiffrement hybride RSA/AES pour la portabilité inter-appareils
+                val encryptedBytes = CryptoManager.encryptHybrid(rawJson.toByteArray(Charsets.UTF_8))
                 outputFile.writeBytes(encryptedBytes)
                 true
             } catch (e: Exception) {
@@ -42,7 +43,8 @@ object BackupManager {
         return withContext(Dispatchers.IO) {
             try {
                 val encryptedBytes = inputFile.readBytes()
-                val decryptedBytes = CryptoManager.decrypt(encryptedBytes)
+                // Déchiffrement hybride sécurisé
+                val decryptedBytes = CryptoManager.decryptHybrid(encryptedBytes)
                 val rawJson = String(decryptedBytes, Charsets.UTF_8)
                 val jsonArray = JSONArray(rawJson)
                 val list = mutableListOf<MemoryEntity>()
