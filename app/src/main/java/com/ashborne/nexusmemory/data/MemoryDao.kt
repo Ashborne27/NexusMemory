@@ -1,33 +1,22 @@
 package com.ashborne.nexusmemory.data
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MemoryDao {
-
     @Query("SELECT * FROM memories ORDER BY timestamp DESC")
     fun getAllMemories(): Flow<List<MemoryEntity>>
 
-    @Query("SELECT * FROM memories")
+    @Query("SELECT * FROM memories ORDER BY timestamp DESC")
     suspend fun getAllMemoriesList(): List<MemoryEntity>
 
-    @Query("""
-        SELECT memories.* FROM memories
-        JOIN memories_fts ON memories.id = memories_fts.docid
-        WHERE memories_fts MATCH :query
-    """)
-    fun searchMemoriesFts(query: String): Flow<List<MemoryEntity>>
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertMemory(memory: MemoryEntity)
+    suspend fun insert(memory: MemoryEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(memories: List<MemoryEntity>)
-
-    @Delete
-    suspend fun deleteMemory(memory: MemoryEntity)
-
-    @Query("DELETE FROM memories")
-    suspend fun clearAll()
 }

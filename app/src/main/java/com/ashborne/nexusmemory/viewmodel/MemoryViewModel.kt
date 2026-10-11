@@ -12,31 +12,16 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 class MemoryViewModel(private val dao: MemoryDao) : ViewModel() {
-
     val allMemories: Flow<List<MemoryEntity>> = dao.getAllMemories()
-
-    fun searchMemories(query: String): Flow<List<MemoryEntity>> {
-        return if (query.isBlank()) {
-            dao.getAllMemories()
-        } else {
-            dao.searchMemoriesFts("*$query*")
-        }
-    }
 
     fun addMemory(text: String, category: String, isProtected: Boolean) {
         viewModelScope.launch {
-            val finalText = if (isProtected) {
+            val finalContent = if (isProtected) {
                 CryptoManager.encryptToString(text)
             } else {
                 text
             }
-            val entity = MemoryEntity(
-                text = finalText,
-                category = category,
-                timestamp = System.currentTimeMillis(),
-                isProtected = isProtected
-            )
-            dao.insertMemory(entity)
+            dao.insert(MemoryEntity(text = finalContent, category = category, timestamp = System.currentTimeMillis(), isProtected = isProtected))
         }
     }
 
@@ -48,10 +33,18 @@ class MemoryViewModel(private val dao: MemoryDao) : ViewModel() {
         }
     }
 
+    fun encryptContent(plainText: String): String {
+        return try {
+            CryptoManager.encryptToString(plainText)
+        } catch (e: Exception) {
+            plainText
+        }
+    }
+
     fun exportBackup(context: Context, outputFile: File, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
-            val result = BackupManager.exportBackup(context, dao, outputFile)
-            onResult(result)
+            val success = BackupManager.exportBackup(context, dao, outputFile)
+            onResult(success)
         }
     }
 
