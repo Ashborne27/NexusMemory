@@ -9,7 +9,7 @@ on:
 jobs:
   build-release:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - name: Checkout du code source
         uses: actions/checkout@v4
@@ -20,11 +20,14 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Configuration de Gradle et du cache
+        uses: gradle/actions/setup-gradle@v3
+
       - name: Attribution des droits d'exécution
         run: chmod +x gradlew
 
       - name: Compilation de l'APK Release
-        run: ./gradlew :app:assembleRelease --no-daemon -x lint -x test
+        run: ./gradlew :app:assembleRelease --no-daemon --info -x lint -x test
 
       - name: Exportation de l'artefact APK
         uses: actions/upload-artifact@v4
