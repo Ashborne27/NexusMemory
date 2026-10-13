@@ -9,6 +9,7 @@ on:
 jobs:
   build-release:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout du code source
         uses: actions/checkout@v4
