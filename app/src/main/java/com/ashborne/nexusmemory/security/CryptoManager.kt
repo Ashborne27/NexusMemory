@@ -80,9 +80,13 @@ class CryptoManager {
             return String(decryptedBytes, Charsets.UTF_8)
         }
 
+        @JvmStatic
         fun encryptToString(plainText: String): String = encryptStatic(plainText)
+        @JvmStatic
         fun decryptFromString(cipherTextBase64: String): String = decryptStatic(cipherTextBase64)
+        @JvmStatic
         fun encryptHybrid(plainText: String): String = encryptStatic(plainText)
+        @JvmStatic
         fun decryptHybrid(cipherTextBase64: String): String = decryptStatic(cipherTextBase64)
     }
 }
