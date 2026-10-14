@@ -10,6 +10,12 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 class CryptoManager {
+
+    fun encryptToString(plainText: String): String = encryptStatic(plainText)
+    fun decryptFromString(cipherTextBase64: String): String = decryptStatic(cipherTextBase64)
+    fun encryptHybrid(plainText: String): String = encryptStatic(plainText)
+    fun decryptHybrid(cipherTextBase64: String): String = decryptStatic(cipherTextBase64)
+
     companion object {
         private const val KEY_ALIAS = "NexusMemoryKey"
         private const val ALGORITHM = KeyProperties.KEY_ALGORITHM_AES
@@ -50,7 +56,7 @@ class CryptoManager {
             }
         }
 
-        fun encryptToString(plainText: String): String {
+        private fun encryptStatic(plainText: String): String {
             val cipher = Cipher.getInstance(TRANSFORMATION)
             cipher.init(Cipher.ENCRYPT_MODE, getOrCreateSecretKey())
             val iv = cipher.iv
@@ -61,7 +67,7 @@ class CryptoManager {
             return Base64.encodeToString(combined, Base64.NO_WRAP)
         }
 
-        fun decryptFromString(cipherTextBase64: String): String {
+        private fun decryptStatic(cipherTextBase64: String): String {
             val combined = Base64.decode(cipherTextBase64, Base64.NO_WRAP)
             val iv = ByteArray(12)
             val encryptedBytes = ByteArray(combined.size - 12)
@@ -74,7 +80,9 @@ class CryptoManager {
             return String(decryptedBytes, Charsets.UTF_8)
         }
 
-        fun encryptHybrid(plainText: String): String = encryptToString(plainText)
-        fun decryptHybrid(cipherTextBase64: String): String = decryptFromString(cipherTextBase64)
+        fun encryptToString(plainText: String): String = encryptStatic(plainText)
+        fun decryptFromString(cipherTextBase64: String): String = decryptStatic(cipherTextBase64)
+        fun encryptHybrid(plainText: String): String = encryptStatic(plainText)
+        fun decryptHybrid(cipherTextBase64: String): String = decryptStatic(cipherTextBase64)
     }
 }
