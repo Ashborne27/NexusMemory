@@ -11,11 +11,6 @@ import javax.crypto.spec.GCMParameterSpec
 
 class CryptoManager {
 
-    fun encryptToString(plainText: String): String = encryptStatic(plainText)
-    fun decryptFromString(cipherTextBase64: String): String = decryptStatic(cipherTextBase64)
-    fun encryptHybrid(plainText: String): String = encryptStatic(plainText)
-    fun decryptHybrid(cipherTextBase64: String): String = decryptStatic(cipherTextBase64)
-
     companion object {
         private const val KEY_ALIAS = "NexusMemoryKey"
         private const val ALGORITHM = KeyProperties.KEY_ALGORITHM_AES
@@ -56,37 +51,63 @@ class CryptoManager {
             }
         }
 
-        private fun encryptStatic(plainText: String): String {
+        private fun encryptBytes(plainBytes: ByteArray): ByteArray {
             val cipher = Cipher.getInstance(TRANSFORMATION)
             cipher.init(Cipher.ENCRYPT_MODE, getOrCreateSecretKey())
             val iv = cipher.iv
-            val encryptedBytes = cipher.doFinal(plainText.toByteArray(Charsets.UTF_8))
+            val encryptedBytes = cipher.doFinal(plainBytes)
             val combined = ByteArray(iv.size + encryptedBytes.size)
             System.arraycopy(iv, 0, combined, 0, iv.size)
             System.arraycopy(encryptedBytes, 0, combined, iv.size, encryptedBytes.size)
-            return Base64.encodeToString(combined, Base64.NO_WRAP)
+            return combined
         }
 
-        private fun decryptStatic(cipherTextBase64: String): String {
-            val combined = Base64.decode(cipherTextBase64, Base64.NO_WRAP)
+        private fun decryptBytes(combinedBytes: ByteArray): ByteArray {
             val iv = ByteArray(12)
-            val encryptedBytes = ByteArray(combined.size - 12)
-            System.arraycopy(combined, 0, iv, 0, 12)
-            System.arraycopy(combined, 12, encryptedBytes, 0, encryptedBytes.size)
+            val encryptedBytes = ByteArray(combinedBytes.size - 12)
+            System.arraycopy(combinedBytes, 0, iv, 0, 12)
+            System.arraycopy(combinedBytes, 12, encryptedBytes, 0, encryptedBytes.size)
             val cipher = Cipher.getInstance(TRANSFORMATION)
             val spec = GCMParameterSpec(128, iv)
             cipher.init(Cipher.DECRYPT_MODE, getOrCreateSecretKey(), spec)
-            val decryptedBytes = cipher.doFinal(encryptedBytes)
+            return cipher.doFinal(encryptedBytes)
+        }
+
+        @JvmStatic
+        fun encryptToString(plainText: String): String {
+            val combined = encryptBytes(plainText.toByteArray(Charsets.UTF_8))
+            return Base64.encodeToString(combined, Base64.NO_WRAP)
+        }
+
+        @JvmStatic
+        fun decryptFromString(cipherTextBase64: String): String {
+            val combined = Base64.decode(cipherTextBase64, Base64.NO_WRAP)
+            val decryptedBytes = decryptBytes(combined)
             return String(decryptedBytes, Charsets.UTF_8)
         }
 
         @JvmStatic
-        fun encryptToString(plainText: String): String = encryptStatic(plainText)
+        fun encryptToString(plainBytes: ByteArray): String {
+            val combined = encryptBytes(plainBytes)
+            return Base64.encodeToString(combined, Base64.NO_WRAP)
+        }
+
         @JvmStatic
-        fun decryptFromString(cipherTextBase64: String): String = decryptStatic(cipherTextBase64)
+        fun decryptFromString(cipherBytes: ByteArray): String {
+            val decryptedBytes = decryptBytes(cipherBytes)
+            return String(decryptedBytes, Charsets.UTF_8)
+        }
+
         @JvmStatic
-        fun encryptHybrid(plainText: String): String = encryptStatic(plainText)
+        fun encryptHybrid(plainText: String): String = encryptToString(plainText)
+
         @JvmStatic
-        fun decryptHybrid(cipherTextBase64: String): String = decryptStatic(cipherTextBase64)
+        fun encryptHybrid(plainBytes: ByteArray): ByteArray = encryptBytes(plainBytes)
+
+        @JvmStatic
+        fun decryptHybrid(cipherTextBase64: String): String = decryptFromString(cipherTextBase64)
+
+        @JvmStatic
+        fun decryptHybrid(cipherBytes: ByteArray): ByteArray = decryptBytes(cipherBytes)
     }
 }
