@@ -12,7 +12,7 @@ class WebDavSyncWorker(
     workerParams: WorkerParameters
 ) : CoroutineWorker(appContext, workerParams) {
 
-    override suspend doWork(): Result = withContext(Dispatchers.IO) {
+    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
             val rawData = "NexusMemory_Backup_Auto_${System.currentTimeMillis()}"
             val encryptedData = CryptoManager.encryptToString(rawData)
