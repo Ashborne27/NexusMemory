@@ -11,8 +11,8 @@ android {
         applicationId = "com.ashborne.nexusmemory"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 68
+        versionName = "6.8-Alpha"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

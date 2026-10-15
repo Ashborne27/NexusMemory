@@ -73,7 +73,7 @@ class MainActivity : FragmentActivity() {
                     if (success) {
                         outputStream.write(tempFile.readBytes())
                         tempFile.delete()
-                        Toast.makeText(this, "Sauvegarde .nexus v6.7 exportée", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, "Sauvegarde .nexus v6.8-Alpha exportée", Toast.LENGTH_LONG).show()
                     } else {
                         Toast.makeText(this, "Échec de l'exportation", Toast.LENGTH_LONG).show()
                     }
@@ -240,7 +240,7 @@ fun MainVaultScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("NexusMemory v6.7", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
+                Text("NexusMemory v6.8-Alpha", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
                 Button(onClick = onLockClick, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)) {
                     Text("Verrouiller")
                 }
