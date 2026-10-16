@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.ListenableWorker
-import com.ashborne.nexusmemory.security.CryptoManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -16,10 +15,10 @@ class WebDavSyncWorker(
     override suspend fun doWork(): ListenableWorker.Result {
         return withContext(Dispatchers.IO) {
             try {
-                val rawData = "NexusMemory_Backup_Auto_${System.currentTimeMillis()}"
-                val encryptedData = CryptoManager.encryptToString(rawData)
-                val isSuccess = performWebDavUpload(encryptedData)
-                if (isSuccess) {
+                val timestamp = System.currentTimeMillis()
+                val payload = "NexusMemory_Sync_$timestamp"
+                val success = executeSync(payload)
+                if (success) {
                     ListenableWorker.Result.success()
                 } else {
                     ListenableWorker.Result.retry()
@@ -30,7 +29,7 @@ class WebDavSyncWorker(
         }
     }
 
-    private fun performWebDavUpload(data: String): Boolean {
+    private fun executeSync(data: String): Boolean {
         return true
     }
 }
