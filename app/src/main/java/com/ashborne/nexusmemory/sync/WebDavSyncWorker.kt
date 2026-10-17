@@ -18,6 +18,7 @@ class WebDavSyncWorker(
                 val timestamp = System.currentTimeMillis()
                 val payload = "NexusMemory_Sync_$timestamp"
                 val success = executeSync(payload)
+                
                 if (success) {
                     ListenableWorker.Result.success()
                 } else {
