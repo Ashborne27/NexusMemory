@@ -18,8 +18,7 @@ class WebDavSyncWorker(
                 val timestamp = System.currentTimeMillis()
                 val payload = "NexusMemory_Secure_Sync_$timestamp"
                 
-                val success = performWebDavSync(payload)
-                if (success) {
+                if (performWebDavSync(payload)) {
                     ListenableWorker.Result.success()
                 } else {
                     ListenableWorker.Result.retry()
