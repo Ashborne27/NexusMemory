@@ -17,6 +17,7 @@ import com.ashborne.nexusmemory.backup.BackupManager
 import com.ashborne.nexusmemory.data.MemoryDatabase
 import com.ashborne.nexusmemory.data.MemoryEntity
 import com.ashborne.nexusmemory.security.BiometricHelper
+import com.ashborne.nexusmemory.sync.WebDavManager
 import com.ashborne.nexusmemory.ui.CameraQrScanner
 import com.ashborne.nexusmemory.ui.QrCodeGenerator
 import kotlinx.coroutines.Dispatchers
@@ -42,6 +43,11 @@ class MainActivity : FragmentActivity() {
             var selectedMemoryForQr by remember { mutableStateOf<MemoryEntity?>(null) }
             var unlockedMemoryIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
             var statusMessage by remember { mutableStateOf("Prêt") }
+
+            // Configuration WebDAV par défaut (extensible via paramètres)
+            val webDavUrl = "https://dav.jiomail.com/remote.php/dav/files/user@jiomail.com" // Exemple Nextcloud/WebDAV
+            val webDavUser = "ashborne"
+            val webDavToken = "nexus_secure_token"
 
             LaunchedEffect(memoriesFlow, searchQuery) {
                 displayedMemories = if (searchQuery.isBlank()) {
@@ -86,14 +92,14 @@ class MainActivity : FragmentActivity() {
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // En-tête corrigé avec gestion stricte des largeurs pour éviter tout chevauchement
+                        // En-tête harmonisé
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "NexusMemory v6.9",
+                                text = "NexusMemory v7.0",
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.weight(1f),
                                 maxLines = 1
@@ -111,7 +117,7 @@ class MainActivity : FragmentActivity() {
                             }
                         }
 
-                        // Boutons d'action Exporter / Importer
+                        // Boutons d'action Exporter / Importer Local
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -150,16 +156,24 @@ class MainActivity : FragmentActivity() {
                             ) { Text("Importer") }
                         }
 
-                        // Boutons WebDAV / Scanner QR
+                        // Boutons WebDAV Réel & Scanner QR P2P
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Button(
-                                onClick = { statusMessage = "WebDAV synchronisé" },
+                                onClick = {
+                                    statusMessage = "Synchro WebDAV en cours..."
+                                    scope.launch {
+                                        val backupData = backupManager.exportToJson()
+                                        val success = WebDavManager.uploadToWebDav(webDavUrl, webDavUser, webDavToken, backupData)
+                                        statusMessage = if (success) "Cloud WebDAV synchronisé !" else "Échec synchro WebDAV"
+                                    }
+                                },
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-                            ) { Text("WebDAV") }
+                            ) { Text("Cloud WebDAV") }
+
                             Button(
                                 onClick = { showScanner = true },
                                 modifier = Modifier.weight(1f),
@@ -213,7 +227,7 @@ class MainActivity : FragmentActivity() {
                             }
                         }
 
-                        // Checkbox de protection KeyStore
+                        // Checkbox KeyStore
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(vertical = 2.dp)
@@ -233,7 +247,7 @@ class MainActivity : FragmentActivity() {
 
                         HorizontalDivider()
 
-                        // Liste dynamique scrollable des mémoires
+                        // Liste dynamique des mémoires
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.weight(1f)
