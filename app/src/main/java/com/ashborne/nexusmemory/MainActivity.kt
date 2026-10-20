@@ -290,11 +290,11 @@ class MainActivity : FragmentActivity() {
                     }
                 }
 
-                // Dialogue Configuration / Synchronisation WebDAV
+                // Dialogue Configuration & Actions WebDAV (Upload & Download)
                 if (showWebDavDialog) {
                     AlertDialog(
                         onDismissRequest = { showWebDavDialog = false },
-                        title = { Text("Configuration Cloud WebDAV") },
+                        title = { Text("Cloud WebDAV") },
                         text = {
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 OutlinedTextField(
@@ -318,24 +318,53 @@ class MainActivity : FragmentActivity() {
                             }
                         },
                         confirmButton = {
-                            Button(
-                                onClick = {
-                                    prefs.edit()
-                                        .putString("webdav_url", webDavUrl)
-                                        .putString("webdav_user", webDavUser)
-                                        .putString("webdav_pass", webDavPass)
-                                        .apply()
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Button(
+                                    onClick = {
+                                        prefs.edit()
+                                            .putString("webdav_url", webDavUrl)
+                                            .putString("webdav_user", webDavUser)
+                                            .putString("webdav_pass", webDavPass)
+                                            .apply()
 
-                                    showWebDavDialog = false
-                                    statusMessage = "Synchro WebDAV..."
-                                    scope.launch {
-                                        val backupData = backupManager.exportToJson()
-                                        val success = WebDavManager.uploadToWebDav(webDavUrl, webDavUser, webDavPass, backupData)
-                                        statusMessage = if (success) "Cloud WebDAV synchronisé !" else "Échec synchro WebDAV"
-                                    }
+                                        showWebDavDialog = false
+                                        statusMessage = "Téléversement WebDAV..."
+                                        scope.launch {
+                                            val backupData = backupManager.exportToJson()
+                                            val success = WebDavManager.uploadToWebDav(webDavUrl, webDavUser, webDavPass, backupData)
+                                            statusMessage = if (success) "Sauvegarde WebDAV envoyée !" else "Échec téléversement WebDAV"
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Sauvegarder (Push)")
                                 }
-                            ) {
-                                Text("Enregistrer & Synchro")
+
+                                Button(
+                                    onClick = {
+                                        prefs.edit()
+                                            .putString("webdav_url", webDavUrl)
+                                            .putString("webdav_user", webDavUser)
+                                            .putString("webdav_pass", webDavPass)
+                                            .apply()
+
+                                        showWebDavDialog = false
+                                        statusMessage = "Téléchargement WebDAV..."
+                                        scope.launch {
+                                            val downloadedData = WebDavManager.downloadFromWebDav(webDavUrl, webDavUser, webDavPass)
+                                            if (downloadedData != null) {
+                                                backupManager.importFromJson(downloadedData)
+                                                statusMessage = "Restauration Cloud réussie !"
+                                            } else {
+                                                statusMessage = "Échec téléchargement WebDAV"
+                                            }
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Restaurer (Pull)")
+                                }
                             }
                         },
                         dismissButton = {
