@@ -45,7 +45,7 @@ class MainActivity : FragmentActivity() {
             var showWebDavDialog by remember { mutableStateOf(false) }
             var selectedMemoryForQr by remember { mutableStateOf<MemoryEntity?>(null) }
             var unlockedMemoryIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
-            var statusMessage by remember { mutableStateOf("Prêt") }
+            var statusMessage by remember { mutableStateOf("NexusMemory v7.0 - Phase 13 Audio") }
 
             var webDavUrl by remember { mutableStateOf(prefs.getString("webdav_url", "https://example.com/webdav") ?: "") }
             var webDavUser by remember { mutableStateOf(prefs.getString("webdav_user", "user") ?: "") }
