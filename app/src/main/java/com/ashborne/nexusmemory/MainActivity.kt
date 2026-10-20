@@ -69,7 +69,7 @@ class MainActivity : FragmentActivity() {
                                     )
                                 )
                             }
-                            statusMessage = "Mémoire P2P reçue et enregistrée !"
+                            statusMessage = "Mémoire P2P reçue !"
                             showScanner = false
                         }
                         Button(
@@ -84,8 +84,9 @@ class MainActivity : FragmentActivity() {
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        // En-tête avec titre et bouton de verrouillage global
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -93,19 +94,21 @@ class MainActivity : FragmentActivity() {
                         ) {
                             Text(
                                 text = "NexusMemory v6.9-Beta",
-                                style = MaterialTheme.typography.headlineMedium
+                                style = MaterialTheme.typography.titleLarge
                             )
                             Button(
                                 onClick = {
                                     unlockedMemoryIds = emptySet()
-                                    statusMessage = "Toutes les mémoires ont été verrouillées !"
+                                    statusMessage = "Mémoires verrouillées !"
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                             ) {
-                                Text("Verrouiller")
+                                Text("Verrouiller", style = MaterialTheme.typography.labelMedium)
                             }
                         }
 
+                        // Boutons d'action Exporter / Importer
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -122,7 +125,7 @@ class MainActivity : FragmentActivity() {
                                     }
                                 },
                                 modifier = Modifier.weight(1f)
-                            ) { Text("Exporter (.nexus)") }
+                            ) { Text("Exporter") }
 
                             Button(
                                 onClick = {
@@ -131,25 +134,26 @@ class MainActivity : FragmentActivity() {
                                         if (exportFile.exists()) {
                                             backupManager.importFromJson(exportFile.readText())
                                             withContext(Dispatchers.Main) {
-                                                statusMessage = "Importation réussie !"
+                                                statusMessage = "Import réussi !"
                                             }
                                         } else {
                                             withContext(Dispatchers.Main) {
-                                                statusMessage = "Aucun fichier .nexus trouvé"
+                                                statusMessage = "Fichier introuvable"
                                             }
                                         }
                                     }
                                 },
                                 modifier = Modifier.weight(1f)
-                            ) { Text("Importer (.nexus)") }
+                            ) { Text("Importer") }
                         }
 
+                        // Boutons WebDAV / Scanner QR
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Button(
-                                onClick = { statusMessage = "Cloud WebDAV synchronisé" },
+                                onClick = { statusMessage = "WebDAV synchronisé" },
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                             ) { Text("WebDAV") }
@@ -160,71 +164,76 @@ class MainActivity : FragmentActivity() {
                             ) { Text("Scanner QR") }
                         }
 
+                        // Recherche FTS
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
                             label = { Text("Recherche FTS rapide...") },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
                         )
 
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                OutlinedTextField(
-                                    value = newThoughtText,
-                                    onValueChange = { newThoughtText = it },
-                                    label = { Text("Nouvelle pensée...") },
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Button(
-                                    onClick = {
-                                        if (newThoughtText.isNotBlank()) {
-                                            val text = newThoughtText
-                                            val protectedState = isProtected
-                                            scope.launch(Dispatchers.IO) {
-                                                dao.insertMemory(
-                                                    MemoryEntity(
-                                                        title = text.take(20),
-                                                        content = text,
-                                                        category = if (protectedState) "Protégé" else "Général",
-                                                        isProtected = protectedState
-                                                    )
+                        // Zone d'ajout de pensée avec alignement révisé
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value = newThoughtText,
+                                onValueChange = { newThoughtText = it },
+                                label = { Text("Nouvelle pensée...") },
+                                modifier = Modifier.weight(1f),
+                                maxLines = 2
+                            )
+                            Button(
+                                onClick = {
+                                    if (newThoughtText.isNotBlank()) {
+                                        val text = newThoughtText
+                                        val protectedState = isProtected
+                                        scope.launch(Dispatchers.IO) {
+                                            dao.insertMemory(
+                                                MemoryEntity(
+                                                    title = text.take(20),
+                                                    content = text,
+                                                    category = if (protectedState) "Protégé" else "Général",
+                                                    isProtected = protectedState
                                                 )
-                                            }
-                                            newThoughtText = ""
-                                            statusMessage = if (protectedState) "Pensée chiffrée enregistrée !" else "Pensée ajoutée !"
+                                            )
                                         }
-                                    },
-                                    modifier = Modifier.align(Alignment.CenterVertically)
-                                ) {
-                                    Text("Ajouter")
+                                        newThoughtText = ""
+                                        statusMessage = if (protectedState) "Pensée chiffrée !" else "Pensée ajoutée !"
+                                    }
                                 }
-                            }
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(start = 4.dp)
                             ) {
-                                Checkbox(
-                                    checked = isProtected,
-                                    onCheckedChange = { isProtected = it }
-                                )
-                                Text(
-                                    text = "Protéger (Chiffrement KeyStore)",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
+                                Text("Ajouter")
                             }
+                        }
+
+                        // Checkbox séparé avec espacement garanti
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(vertical = 2.dp)
+                        ) {
+                            Checkbox(
+                                checked = isProtected,
+                                onCheckedChange = { isProtected = it }
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Protéger (Chiffrement KeyStore)",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                         }
 
                         Text(text = "Statut : $statusMessage", style = MaterialTheme.typography.bodySmall)
 
                         HorizontalDivider()
 
+                        // Liste dynamique scrollable des mémoires
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.weight(1f)
                         ) {
                             items(displayedMemories) { memory ->
                                 val isUnlocked = !memory.isProtected || unlockedMemoryIds.contains(memory.id)
@@ -275,6 +284,7 @@ class MainActivity : FragmentActivity() {
                     }
                 }
 
+                // Dialogue QR Code P2P
                 selectedMemoryForQr?.let { memory ->
                     val qrBitmap = remember(memory) {
                         QrCodeGenerator.generateQrBitmap(memory.content)
