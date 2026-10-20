@@ -3,6 +3,8 @@ package com.ashborne.nexusmemory
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,6 +17,7 @@ import com.ashborne.nexusmemory.backup.BackupManager
 import com.ashborne.nexusmemory.data.MemoryDatabase
 import com.ashborne.nexusmemory.data.MemoryEntity
 import com.ashborne.nexusmemory.ui.CameraQrScanner
+import com.ashborne.nexusmemory.ui.QrCodeGenerator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -35,6 +38,7 @@ class MainActivity : ComponentActivity() {
             var newThoughtText by remember { mutableStateOf("") }
             var isProtected by remember { mutableStateOf(false) }
             var showScanner by remember { mutableStateOf(false) }
+            var selectedMemoryForQr by remember { mutableStateOf<MemoryEntity?>(null) }
             var statusMessage by remember { mutableStateOf("Prêt") }
 
             LaunchedEffect(memoriesFlow, searchQuery) {
@@ -54,7 +58,16 @@ class MainActivity : ComponentActivity() {
                 if (showScanner) {
                     Box(modifier = Modifier.fillMaxSize()) {
                         CameraQrScanner(modifier = Modifier.fillMaxSize()) { scanned ->
-                            statusMessage = "QR Scanné : $scanned"
+                            scope.launch(Dispatchers.IO) {
+                                dao.insertMemory(
+                                    MemoryEntity(
+                                        title = scanned.take(20),
+                                        content = scanned,
+                                        category = "P2P Reçu"
+                                    )
+                                )
+                            }
+                            statusMessage = "Mémoire P2P reçue et enregistrée !"
                             showScanner = false
                         }
                         Button(
@@ -76,7 +89,6 @@ class MainActivity : ComponentActivity() {
                             style = MaterialTheme.typography.headlineMedium
                         )
 
-                        // Action Exporter / Importer
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -131,7 +143,6 @@ class MainActivity : ComponentActivity() {
                             ) { Text("Scanner QR") }
                         }
 
-                        // Recherche FTS
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
@@ -139,7 +150,6 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxWidth()
                         )
 
-                        // Saisie de pensée avec option KeyStore
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -195,14 +205,15 @@ class MainActivity : ComponentActivity() {
 
                         HorizontalDivider()
 
-                        // Liste des mémoires avec statut visuel
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxSize()
                         ) {
                             items(displayedMemories) { memory ->
                                 Card(
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { selectedMemoryForQr = memory }
                                 ) {
                                     Column(modifier = Modifier.padding(12.dp)) {
                                         Row(
@@ -225,6 +236,43 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
+                }
+
+                // Boîte de dialogue affichant le QR Code chiffré P2P
+                selectedMemoryForQr?.let { memory ->
+                    val qrBitmap = remember(memory) {
+                        QrCodeGenerator.generateQrBitmap(memory.content)
+                    }
+                    AlertDialog(
+                        onDismissRequest = { selectedMemoryForQr = null },
+                        title = { Text("Partage P2P : ${memory.title}") },
+                        text = {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                if (qrBitmap != null) {
+                                    Image(
+                                        bitmap = qrBitmap,
+                                        contentDescription = "QR Code P2P",
+                                        modifier = Modifier.size(240.dp)
+                                    )
+                                } else {
+                                    Text("Erreur lors de la génération du QR Code")
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Scannez ce code depuis un autre téléphone pour transférer la mémoire.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { selectedMemoryForQr = null }) {
+                                Text("Fermer")
+                            }
+                        }
+                    )
                 }
             }
         }
