@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
@@ -59,7 +60,6 @@ class MainActivity : FragmentActivity() {
             var webDavUser by remember { mutableStateOf(prefs.getString("webdav_user", "user") ?: "") }
             var webDavPass by remember { mutableStateOf(prefs.getString("webdav_pass", "password") ?: "") }
 
-            // Lanceur de permission pour le micro
             val permissionLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.RequestPermission()
             ) { isGranted ->
@@ -143,7 +143,6 @@ class MainActivity : FragmentActivity() {
                             }
                         }
 
-                        // Ligne 1 : Exporter / Importer
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -182,7 +181,6 @@ class MainActivity : FragmentActivity() {
                             ) { Text("Importer") }
                         }
 
-                        // Ligne 2 : Cloud WebDAV / Scanner QR
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -200,7 +198,6 @@ class MainActivity : FragmentActivity() {
                             ) { Text("Scanner QR") }
                         }
 
-                        // Ligne 3 : Enregistrement Vocal Sécurisé
                         Button(
                             onClick = {
                                 if (!isRecording) {
@@ -365,7 +362,6 @@ class MainActivity : FragmentActivity() {
                     }
                 }
 
-                // Boîte de dialogue WebDAV
                 if (showWebDavDialog) {
                     AlertDialog(
                         onDismissRequest = { showWebDavDialog = false },
@@ -456,7 +452,6 @@ class MainActivity : FragmentActivity() {
                     )
                 }
 
-                // Dialogue QR Code P2P
                 selectedMemoryForQr?.let { memory ->
                     val qrBitmap = remember(memory) {
                         QrCodeGenerator.generateQrBitmap(memory.content)
