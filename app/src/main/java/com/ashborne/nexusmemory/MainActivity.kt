@@ -1,9 +1,14 @@
 package com.ashborne.nexusmemory
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Bundle
-import androidx.fragment.app.FragmentActivity
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -53,6 +58,23 @@ class MainActivity : FragmentActivity() {
             var webDavUrl by remember { mutableStateOf(prefs.getString("webdav_url", "https://example.com/webdav") ?: "") }
             var webDavUser by remember { mutableStateOf(prefs.getString("webdav_user", "user") ?: "") }
             var webDavPass by remember { mutableStateOf(prefs.getString("webdav_pass", "password") ?: "") }
+
+            // Lanceur de permission pour le micro
+            val permissionLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestPermission()
+            ) { isGranted ->
+                if (isGranted) {
+                    val file = voiceRecorder.startRecording()
+                    if (file != null) {
+                        isRecording = true
+                        statusMessage = "Enregistrement vocal en cours..."
+                    } else {
+                        statusMessage = "Échec démarrage micro"
+                    }
+                } else {
+                    statusMessage = "Permission microphone refusée !"
+                }
+            }
 
             LaunchedEffect(memoriesFlow, searchQuery) {
                 displayedMemories = if (searchQuery.isBlank()) {
@@ -121,7 +143,7 @@ class MainActivity : FragmentActivity() {
                             }
                         }
 
-                        // Ligne 1 des actions : Exporter / Importer
+                        // Ligne 1 : Exporter / Importer
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -160,7 +182,7 @@ class MainActivity : FragmentActivity() {
                             ) { Text("Importer") }
                         }
 
-                        // Ligne 2 des actions : Cloud WebDAV / Scanner QR
+                        // Ligne 2 : Cloud WebDAV / Scanner QR
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -178,16 +200,25 @@ class MainActivity : FragmentActivity() {
                             ) { Text("Scanner QR") }
                         }
 
-                        // Ligne 3 des actions : Enregistrement Audio Interactif
+                        // Ligne 3 : Enregistrement Vocal Sécurisé
                         Button(
                             onClick = {
                                 if (!isRecording) {
-                                    val file = voiceRecorder.startRecording()
-                                    if (file != null) {
-                                        isRecording = true
-                                        statusMessage = "Enregistrement vocal en cours..."
+                                    val hasPermission = ContextCompat.checkSelfPermission(
+                                        this@MainActivity,
+                                        Manifest.permission.RECORD_AUDIO
+                                    ) == PackageManager.PERMISSION_GRANTED
+
+                                    if (hasPermission) {
+                                        val file = voiceRecorder.startRecording()
+                                        if (file != null) {
+                                            isRecording = true
+                                            statusMessage = "Enregistrement vocal en cours..."
+                                        } else {
+                                            statusMessage = "Échec démarrage micro"
+                                        }
                                     } else {
-                                        statusMessage = "Échec démarrage micro"
+                                        permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                                     }
                                 } else {
                                     val file = voiceRecorder.stopRecording()
