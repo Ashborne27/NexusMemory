@@ -197,7 +197,7 @@ class MainActivity : FragmentActivity() {
                                             dao.insertMemory(
                                                 MemoryEntity(
                                                     title = "Mémoire Vocale",
-                                                    content = "Audio: ${file.absoluteName ?: file.absolutePath}",
+                                                    content = "Audio: ${file.absolutePath}",
                                                     category = "Audio",
                                                     isProtected = isProtected
                                                 )
