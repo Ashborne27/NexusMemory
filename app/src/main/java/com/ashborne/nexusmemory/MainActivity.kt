@@ -86,25 +86,28 @@ class MainActivity : FragmentActivity() {
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // En-tête avec titre et bouton de verrouillage global
+                        // En-tête corrigé avec gestion stricte des largeurs pour éviter tout chevauchement
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "NexusMemory v6.9-Beta",
-                                style = MaterialTheme.typography.titleLarge
+                                text = "NexusMemory v6.9",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1
                             )
+                            Spacer(modifier = Modifier.width(8.dp))
                             Button(
                                 onClick = {
                                     unlockedMemoryIds = emptySet()
                                     statusMessage = "Mémoires verrouillées !"
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
                             ) {
-                                Text("Verrouiller", style = MaterialTheme.typography.labelMedium)
+                                Text("Verrouiller", style = MaterialTheme.typography.labelSmall)
                             }
                         }
 
@@ -173,7 +176,7 @@ class MainActivity : FragmentActivity() {
                             singleLine = true
                         )
 
-                        // Zone d'ajout de pensée avec alignement révisé
+                        // Zone d'ajout de pensée
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -210,7 +213,7 @@ class MainActivity : FragmentActivity() {
                             }
                         }
 
-                        // Checkbox séparé avec espacement garanti
+                        // Checkbox de protection KeyStore
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(vertical = 2.dp)
