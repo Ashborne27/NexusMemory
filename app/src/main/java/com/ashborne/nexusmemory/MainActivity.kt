@@ -11,18 +11,21 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.ashborne.nexusmemory.backup.BackupManager
 import com.ashborne.nexusmemory.data.MemoryDatabase
 import com.ashborne.nexusmemory.data.MemoryEntity
 import com.ashborne.nexusmemory.ui.CameraQrScanner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val database = MemoryDatabase.getDatabase(applicationContext)
         val dao = database.memoryDao()
+        val backupManager = BackupManager(applicationContext, dao)
 
         setContent {
             val scope = rememberCoroutineScope()
@@ -30,6 +33,7 @@ class MainActivity : ComponentActivity() {
             var displayedMemories by remember { mutableStateOf<List<MemoryEntity>>(emptyList()) }
             var searchQuery by remember { mutableStateOf("") }
             var newThoughtText by remember { mutableStateOf("") }
+            var isProtected by remember { mutableStateOf(false) }
             var showScanner by remember { mutableStateOf(false) }
             var statusMessage by remember { mutableStateOf("Prêt") }
 
@@ -72,18 +76,43 @@ class MainActivity : ComponentActivity() {
                             style = MaterialTheme.typography.headlineMedium
                         )
 
+                        // Action Exporter / Importer
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Button(
-                                onClick = { statusMessage = "Export .nexus prêt" },
+                                onClick = {
+                                    scope.launch(Dispatchers.IO) {
+                                        val backupData = backupManager.exportToJson()
+                                        val exportFile = File(getExternalFilesDir(null), "export_backup.nexus")
+                                        exportFile.writeText(backupData)
+                                        withContext(Dispatchers.Main) {
+                                            statusMessage = "Exporté : ${exportFile.name}"
+                                        }
+                                    }
+                                },
                                 modifier = Modifier.weight(1f)
-                            ) { Text("Exporter") }
+                            ) { Text("Exporter (.nexus)") }
+
                             Button(
-                                onClick = { statusMessage = "Import .nexus prêt" },
+                                onClick = {
+                                    scope.launch(Dispatchers.IO) {
+                                        val exportFile = File(getExternalFilesDir(null), "export_backup.nexus")
+                                        if (exportFile.exists()) {
+                                            backupManager.importFromJson(exportFile.readText())
+                                            withContext(Dispatchers.Main) {
+                                                statusMessage = "Importation réussie !"
+                                            }
+                                        } else {
+                                            withContext(Dispatchers.Main) {
+                                                statusMessage = "Aucun fichier .nexus trouvé"
+                                            }
+                                        }
+                                    }
+                                },
                                 modifier = Modifier.weight(1f)
-                            ) { Text("Importer") }
+                            ) { Text("Importer (.nexus)") }
                         }
 
                         Row(
@@ -102,6 +131,7 @@ class MainActivity : ComponentActivity() {
                             ) { Text("Scanner QR") }
                         }
 
+                        // Recherche FTS
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
@@ -109,36 +139,55 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxWidth()
                         )
 
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            OutlinedTextField(
-                                value = newThoughtText,
-                                onValueChange = { newThoughtText = it },
-                                label = { Text("Nouvelle pensée...") },
-                                modifier = Modifier.weight(1f)
-                            )
-                            Button(
-                                onClick = {
-                                    if (newThoughtText.isNotBlank()) {
-                                        val text = newThoughtText
-                                        scope.launch(Dispatchers.IO) {
-                                            dao.insertMemory(
-                                                MemoryEntity(
-                                                    title = text.take(20),
-                                                    content = text,
-                                                    category = "Général"
-                                                )
-                                            )
-                                        }
-                                        newThoughtText = ""
-                                        statusMessage = "Pensée ajoutée avec succès !"
-                                    }
-                                },
-                                modifier = Modifier.align(Alignment.CenterVertically)
+                        // Saisie de pensée avec option KeyStore
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("Ajouter")
+                                OutlinedTextField(
+                                    value = newThoughtText,
+                                    onValueChange = { newThoughtText = it },
+                                    label = { Text("Nouvelle pensée...") },
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Button(
+                                    onClick = {
+                                        if (newThoughtText.isNotBlank()) {
+                                            val text = newThoughtText
+                                            val protectedState = isProtected
+                                            scope.launch(Dispatchers.IO) {
+                                                dao.insertMemory(
+                                                    MemoryEntity(
+                                                        title = text.take(20),
+                                                        content = text,
+                                                        category = if (protectedState) "Protégé" else "Général",
+                                                        isProtected = protectedState
+                                                    )
+                                                )
+                                            }
+                                            newThoughtText = ""
+                                            statusMessage = if (protectedState) "Pensée chiffrée enregistrée !" else "Pensée ajoutée !"
+                                        }
+                                    },
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                ) {
+                                    Text("Ajouter")
+                                }
+                            }
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(start = 4.dp)
+                            ) {
+                                Checkbox(
+                                    checked = isProtected,
+                                    onCheckedChange = { isProtected = it }
+                                )
+                                Text(
+                                    text = "Protéger (Chiffrement KeyStore)",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
                             }
                         }
 
@@ -146,6 +195,7 @@ class MainActivity : ComponentActivity() {
 
                         HorizontalDivider()
 
+                        // Liste des mémoires avec statut visuel
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxSize()
@@ -155,7 +205,19 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Column(modifier = Modifier.padding(12.dp)) {
-                                        Text(text = memory.title, style = MaterialTheme.typography.titleMedium)
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(text = memory.title, style = MaterialTheme.typography.titleMedium)
+                                            if (memory.isProtected) {
+                                                Text(
+                                                    text = "🔒 KeyStore",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        }
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(text = memory.content, style = MaterialTheme.typography.bodyMedium)
                                     }
