@@ -1,7 +1,7 @@
 package com.ashborne.nexusmemory
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.ashborne.nexusmemory.backup.BackupManager
 import com.ashborne.nexusmemory.data.MemoryDatabase
 import com.ashborne.nexusmemory.data.MemoryEntity
+import com.ashborne.nexusmemory.security.BiometricHelper
 import com.ashborne.nexusmemory.ui.CameraQrScanner
 import com.ashborne.nexusmemory.ui.QrCodeGenerator
 import kotlinx.coroutines.Dispatchers
@@ -23,7 +24,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val database = MemoryDatabase.getDatabase(applicationContext)
@@ -39,6 +40,7 @@ class MainActivity : ComponentActivity() {
             var isProtected by remember { mutableStateOf(false) }
             var showScanner by remember { mutableStateOf(false) }
             var selectedMemoryForQr by remember { mutableStateOf<MemoryEntity?>(null) }
+            var unlockedMemoryIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
             var statusMessage by remember { mutableStateOf("Prêt") }
 
             LaunchedEffect(memoriesFlow, searchQuery) {
@@ -84,10 +86,25 @@ class MainActivity : ComponentActivity() {
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Text(
-                            text = "NexusMemory v6.8-Alpha",
-                            style = MaterialTheme.typography.headlineMedium
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "NexusMemory v6.9-Beta",
+                                style = MaterialTheme.typography.headlineMedium
+                            )
+                            Button(
+                                onClick = {
+                                    unlockedMemoryIds = emptySet()
+                                    statusMessage = "Toutes les mémoires ont été verrouillées !"
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                            ) {
+                                Text("Verrouiller")
+                            }
+                        }
 
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -210,10 +227,27 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize()
                         ) {
                             items(displayedMemories) { memory ->
+                                val isUnlocked = !memory.isProtected || unlockedMemoryIds.contains(memory.id)
+
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable { selectedMemoryForQr = memory }
+                                        .clickable {
+                                            if (memory.isProtected && !isUnlocked) {
+                                                BiometricHelper.authenticate(
+                                                    activity = this@MainActivity,
+                                                    onSuccess = {
+                                                        unlockedMemoryIds = unlockedMemoryIds + memory.id
+                                                        statusMessage = "Mémoire déverrouillée"
+                                                    },
+                                                    onError = { err ->
+                                                        statusMessage = "Échec biométrique : $err"
+                                                    }
+                                                )
+                                            } else {
+                                                selectedMemoryForQr = memory
+                                            }
+                                        }
                                 ) {
                                     Column(modifier = Modifier.padding(12.dp)) {
                                         Row(
@@ -223,14 +257,17 @@ class MainActivity : ComponentActivity() {
                                             Text(text = memory.title, style = MaterialTheme.typography.titleMedium)
                                             if (memory.isProtected) {
                                                 Text(
-                                                    text = "🔒 KeyStore",
+                                                    text = if (isUnlocked) "🔓 Déverrouillé" else "🔒 KeyStore Protégé",
                                                     style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.primary
+                                                    color = if (isUnlocked) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
                                                 )
                                             }
                                         }
                                         Spacer(modifier = Modifier.height(4.dp))
-                                        Text(text = memory.content, style = MaterialTheme.typography.bodyMedium)
+                                        Text(
+                                            text = if (isUnlocked) memory.content else "•••••••••••••••••••••••••••• (Appuyez pour déverrouiller)",
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
                                     }
                                 }
                             }
@@ -238,7 +275,6 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                // Boîte de dialogue affichant le QR Code chiffré P2P
                 selectedMemoryForQr?.let { memory ->
                     val qrBitmap = remember(memory) {
                         QrCodeGenerator.generateQrBitmap(memory.content)

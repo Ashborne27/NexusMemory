@@ -50,6 +50,8 @@ android {
 }
 
 dependencies {
+    implementation("androidx.biometric:biometric:1.1.0")
+
 
     implementation("androidx.camera:camera-core:1.3.2")
     implementation("androidx.camera:camera-camera2:1.3.2")
