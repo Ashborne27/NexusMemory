@@ -25,16 +25,22 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val scope = rememberCoroutineScope()
-            var memories by remember { mutableStateOf<List<MemoryEntity>>(emptyList()) }
+            // Collecte réactive du Flow Room en État Compose
+            val memoriesFlow by dao.getAllMemories().collectAsState(initial = emptyList())
+            var displayedMemories by remember { mutableStateOf<List<MemoryEntity>>(emptyList()) }
             var searchQuery by remember { mutableStateOf("") }
             var newThoughtText by remember { mutableStateOf("") }
             var showScanner by remember { mutableStateOf(false) }
             var statusMessage by remember { mutableStateOf("Prêt") }
 
-            // Chargement initial des données
-            LaunchedEffect(Unit) {
-                scope.launch(Dispatchers.IO) {
-                    memories = dao.getAllMemories()
+            // Met à jour la liste affichée selon le flux ou la recherche
+            LaunchedEffect(memoriesFlow, searchQuery) {
+                displayedMemories = if (searchQuery.isBlank()) {
+                    memoriesFlow
+                } else {
+                    withContext(Dispatchers.IO) {
+                        dao.searchMemories(searchQuery)
+                    }
                 }
             }
 
@@ -101,16 +107,7 @@ class MainActivity : ComponentActivity() {
                         // Barre de recherche FTS
                         OutlinedTextField(
                             value = searchQuery,
-                            onValueChange = { query ->
-                                searchQuery = query
-                                scope.launch(Dispatchers.IO) {
-                                    memories = if (query.isBlank()) {
-                                        dao.getAllMemories()
-                                    } else {
-                                        dao.searchMemories(query)
-                                    }
-                                }
-                            },
+                            onValueChange = { searchQuery = it },
                             label = { Text("Recherche FTS rapide...") },
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -138,13 +135,12 @@ class MainActivity : ComponentActivity() {
                                                     category = "Général"
                                                 )
                                             )
-                                            memories = dao.getAllMemories()
                                         }
                                         newThoughtText = ""
                                         statusMessage = "Pensée ajoutée avec succès !"
                                     }
                                 },
-                                modifier = Modifier.align(androidx.compose.ui.Alignment.CenterVertically)
+                                modifier = Modifier.align(Alignment.CenterVertically)
                             ) {
                                 Text("Ajouter")
                             }
@@ -159,14 +155,14 @@ class MainActivity : ComponentActivity() {
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            items(memories) { memory ->
+                            items(displayedMemories) { memory ->
                                 Card(
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Column(modifier = Modifier.padding(12.dp)) {
-                                            Text(text = memory.title, style = MaterialTheme.typography.titleMedium)
-                                            Spacer(modifier = Modifier.height(4.dp))
-                                            Text(text = memory.content, style = MaterialTheme.typography.bodyMedium)
+                                        Text(text = memory.title, style = MaterialTheme.typography.titleMedium)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(text = memory.content, style = MaterialTheme.typography.bodyMedium)
                                     }
                                 }
                             }
