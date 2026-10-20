@@ -3,69 +3,33 @@ package com.ashborne.nexusmemory.backup
 import android.content.Context
 import com.ashborne.nexusmemory.data.MemoryDao
 import com.ashborne.nexusmemory.data.MemoryEntity
-import com.ashborne.nexusmemory.security.CryptoManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
-import org.json.JSONObject
-import java.io.File
 
-object BackupManager {
+class BackupManager(private val context: Context, private val dao: MemoryDao) {
 
-    suspend fun exportBackup(context: Context, dao: MemoryDao, outputFile: File): Boolean {
-        return withContext(Dispatchers.IO) {
-            try {
-                val memories: List<MemoryEntity> = dao.getAllMemoriesList()
-                val jsonArray = JSONArray()
-                memories.forEach { memory ->
-                    val obj = JSONObject().apply {
-                        put("id", memory.id)
-                        put("text", memory.text)
-                        put("category", memory.category)
-                        put("timestamp", memory.timestamp)
-                        put("isProtected", memory.isProtected)
-                    }
-                    jsonArray.put(obj)
-                }
-                val rawJson = jsonArray.toString()
-                // Utilisation du chiffrement hybride RSA/AES pour la portabilité inter-appareils
-                val encryptedBytes = CryptoManager.encryptHybrid(rawJson.toByteArray(Charsets.UTF_8))
-                outputFile.writeBytes(encryptedBytes)
-                true
-            } catch (e: Exception) {
-                e.printStackTrace()
-                false
-            }
-        }
+    suspend fun exportToJson(): String = withContext(Dispatchers.IO) {
+        val list = dao.getAllMemoriesList()
+        list.joinToString(separator = "\n") { "${it.title}::${it.content}::${it.category}" }
     }
 
-    suspend fun importBackup(context: Context, dao: MemoryDao, inputFile: File): Result<Int> {
-        return withContext(Dispatchers.IO) {
-            try {
-                val encryptedBytes = inputFile.readBytes()
-                // Déchiffrement hybride sécurisé
-                val decryptedBytes = CryptoManager.decryptHybrid(encryptedBytes)
-                val rawJson = String(decryptedBytes, Charsets.UTF_8)
-                val jsonArray = JSONArray(rawJson)
-                val list = mutableListOf<MemoryEntity>()
-                for (i in 0 until jsonArray.length()) {
-                    val obj = jsonArray.getJSONObject(i)
-                    list.add(
-                        MemoryEntity(
-                            id = obj.optInt("id", 0),
-                            text = obj.getString("text"),
-                            category = obj.optString("category", "Général"),
-                            timestamp = obj.optLong("timestamp", System.currentTimeMillis()),
-                            isProtected = obj.optBoolean("isProtected", false)
-                        )
+    suspend fun importFromJson(data: String) = withContext(Dispatchers.IO) {
+        val lines = data.lines()
+        val entities = mutableListOf<MemoryEntity>()
+        for (line in lines) {
+            val parts = line.split("::")
+            if (parts.size >= 3) {
+                entities.add(
+                    MemoryEntity(
+                        title = parts[0],
+                        content = parts[1],
+                        category = parts[2]
                     )
-                }
-                dao.insertAll(list)
-                Result.success(list.size)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Result.failure(e)
+                )
             }
+        }
+        if (entities.isNotEmpty()) {
+            dao.insertAll(entities)
         }
     }
 }
