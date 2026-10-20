@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -54,13 +53,14 @@ class MainActivity : FragmentActivity() {
             var showWebDavDialog by remember { mutableStateOf(false) }
             var selectedMemoryForQr by remember { mutableStateOf<MemoryEntity?>(null) }
             var unlockedMemoryIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
-            var statusMessage by remember { mutableStateOf("NexusMemory v7.0 - Audio Prêt") }
+            var statusMessage by remember { mutableStateOf("NexusMemory v7.0 - Prêt") }
 
             var webDavUrl by remember { mutableStateOf(prefs.getString("webdav_url", "https://example.com/webdav") ?: "") }
             var webDavUser by remember { mutableStateOf(prefs.getString("webdav_user", "user") ?: "") }
             var webDavPass by remember { mutableStateOf(prefs.getString("webdav_pass", "password") ?: "") }
 
-            val permissionLauncher = rememberLauncherForActivityResult(
+            // Lanceur de permission audio dynamique
+            val audioPermissionLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.RequestPermission()
             ) { isGranted ->
                 if (isGranted) {
@@ -69,10 +69,10 @@ class MainActivity : FragmentActivity() {
                         isRecording = true
                         statusMessage = "Enregistrement vocal en cours..."
                     } else {
-                        statusMessage = "Échec démarrage micro"
+                        statusMessage = "Échec du démarrage du micro"
                     }
                 } else {
-                    statusMessage = "Permission microphone refusée !"
+                    statusMessage = "Permission microphone refusée par l'utilisateur."
                 }
             }
 
@@ -198,24 +198,25 @@ class MainActivity : FragmentActivity() {
                             ) { Text("Scanner QR") }
                         }
 
+                        // Bouton d'enregistrement vocal sécurisé
                         Button(
                             onClick = {
                                 if (!isRecording) {
-                                    val hasPermission = ContextCompat.checkSelfPermission(
+                                    val checkPermission = ContextCompat.checkSelfPermission(
                                         this@MainActivity,
                                         Manifest.permission.RECORD_AUDIO
-                                    ) == PackageManager.PERMISSION_GRANTED
-
-                                    if (hasPermission) {
+                                    )
+                                    if (checkPermission == PackageManager.PERMISSION_GRANTED) {
                                         val file = voiceRecorder.startRecording()
                                         if (file != null) {
                                             isRecording = true
                                             statusMessage = "Enregistrement vocal en cours..."
                                         } else {
-                                            statusMessage = "Échec démarrage micro"
+                                            statusMessage = "Échec du démarrage du micro"
                                         }
                                     } else {
-                                        permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                        // Déclenchement explicite de la demande système
+                                        audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                                     }
                                 } else {
                                     val file = voiceRecorder.stopRecording()
@@ -231,9 +232,9 @@ class MainActivity : FragmentActivity() {
                                                 )
                                             )
                                         }
-                                        statusMessage = "Note vocale enregistrée !"
+                                        statusMessage = "Note vocale enregistrée avec succès !"
                                     } else {
-                                        statusMessage = "Échec sauvegarde audio"
+                                        statusMessage = "Échec de la sauvegarde audio"
                                     }
                                 }
                             },
