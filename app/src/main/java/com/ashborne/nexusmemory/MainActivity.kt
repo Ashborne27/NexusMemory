@@ -18,6 +18,7 @@ import com.ashborne.nexusmemory.backup.BackupManager
 import com.ashborne.nexusmemory.data.MemoryDatabase
 import com.ashborne.nexusmemory.data.MemoryEntity
 import com.ashborne.nexusmemory.security.BiometricHelper
+import com.ashborne.nexusmemory.security.VoiceRecorderManager
 import com.ashborne.nexusmemory.sync.WebDavManager
 import com.ashborne.nexusmemory.ui.CameraQrScanner
 import com.ashborne.nexusmemory.ui.QrCodeGenerator
@@ -32,6 +33,7 @@ class MainActivity : FragmentActivity() {
         val database = MemoryDatabase.getDatabase(applicationContext)
         val dao = database.memoryDao()
         val backupManager = BackupManager(applicationContext, dao)
+        val voiceRecorder = VoiceRecorderManager(applicationContext)
         val prefs = getSharedPreferences("nexus_settings", Context.MODE_PRIVATE)
 
         setContent {
@@ -41,11 +43,12 @@ class MainActivity : FragmentActivity() {
             var searchQuery by remember { mutableStateOf("") }
             var newThoughtText by remember { mutableStateOf("") }
             var isProtected by remember { mutableStateOf(false) }
+            var isRecording by remember { mutableStateOf(false) }
             var showScanner by remember { mutableStateOf(false) }
             var showWebDavDialog by remember { mutableStateOf(false) }
             var selectedMemoryForQr by remember { mutableStateOf<MemoryEntity?>(null) }
             var unlockedMemoryIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
-            var statusMessage by remember { mutableStateOf("NexusMemory v7.0 - Phase 13 Audio") }
+            var statusMessage by remember { mutableStateOf("NexusMemory v7.0 - Audio Prêt") }
 
             var webDavUrl by remember { mutableStateOf(prefs.getString("webdav_url", "https://example.com/webdav") ?: "") }
             var webDavUser by remember { mutableStateOf(prefs.getString("webdav_user", "user") ?: "") }
@@ -118,6 +121,7 @@ class MainActivity : FragmentActivity() {
                             }
                         }
 
+                        // Ligne 1 des actions : Exporter / Importer
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -156,6 +160,7 @@ class MainActivity : FragmentActivity() {
                             ) { Text("Importer") }
                         }
 
+                        // Ligne 2 des actions : Cloud WebDAV / Scanner QR
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -171,6 +176,46 @@ class MainActivity : FragmentActivity() {
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
                             ) { Text("Scanner QR") }
+                        }
+
+                        // Ligne 3 des actions : Enregistrement Audio Interactif
+                        Button(
+                            onClick = {
+                                if (!isRecording) {
+                                    val file = voiceRecorder.startRecording()
+                                    if (file != null) {
+                                        isRecording = true
+                                        statusMessage = "Enregistrement vocal en cours..."
+                                    } else {
+                                        statusMessage = "Échec démarrage micro"
+                                    }
+                                } else {
+                                    val file = voiceRecorder.stopRecording()
+                                    isRecording = false
+                                    if (file != null && file.exists()) {
+                                        scope.launch(Dispatchers.IO) {
+                                            dao.insertMemory(
+                                                MemoryEntity(
+                                                    title = "Mémoire Vocale",
+                                                    content = "Audio: ${file.absoluteName ?: file.absolutePath}",
+                                                    category = "Audio",
+                                                    isProtected = isProtected
+                                                )
+                                            )
+                                        }
+                                        statusMessage = "Note vocale enregistrée !"
+                                    } else {
+                                        statusMessage = "Échec sauvegarde audio"
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = if (isRecording) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        ) {
+                            Text(if (isRecording) "🔴 Arrêter l'enregistrement vocal" else "🎙️ Enregistrer une note vocale")
                         }
 
                         OutlinedTextField(
@@ -289,7 +334,7 @@ class MainActivity : FragmentActivity() {
                     }
                 }
 
-                // Boîte de dialogue WebDAV corrigée sans aucun chevauchement de boutons
+                // Boîte de dialogue WebDAV
                 if (showWebDavDialog) {
                     AlertDialog(
                         onDismissRequest = { showWebDavDialog = false },
