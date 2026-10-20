@@ -5,10 +5,10 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "memories")
 data class MemoryEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
-    val text: String,
+    @PrimaryKey(autoGenerate = true) val id: Long = 0L,
+    val title: String,
+    val content: String,
     val category: String,
-    val timestamp: Long,
-    val isProtected: Boolean
+    val isProtected: Boolean = false,
+    val timestamp: Long = System.currentTimeMillis()
 )
