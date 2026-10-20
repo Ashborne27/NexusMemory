@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ashborne.nexusmemory.data.MemoryDatabase
@@ -25,7 +26,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val scope = rememberCoroutineScope()
-            // Collecte réactive du Flow Room en État Compose
             val memoriesFlow by dao.getAllMemories().collectAsState(initial = emptyList())
             var displayedMemories by remember { mutableStateOf<List<MemoryEntity>>(emptyList()) }
             var searchQuery by remember { mutableStateOf("") }
@@ -33,7 +33,6 @@ class MainActivity : ComponentActivity() {
             var showScanner by remember { mutableStateOf(false) }
             var statusMessage by remember { mutableStateOf("Prêt") }
 
-            // Met à jour la liste affichée selon le flux ou la recherche
             LaunchedEffect(memoriesFlow, searchQuery) {
                 displayedMemories = if (searchQuery.isBlank()) {
                     memoriesFlow
@@ -73,7 +72,6 @@ class MainActivity : ComponentActivity() {
                             style = MaterialTheme.typography.headlineMedium
                         )
 
-                        // Boutons d'action rapide
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -104,7 +102,6 @@ class MainActivity : ComponentActivity() {
                             ) { Text("Scanner QR") }
                         }
 
-                        // Barre de recherche FTS
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
@@ -112,7 +109,6 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxWidth()
                         )
 
-                        // Zone d'ajout de nouvelle pensée
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -148,9 +144,8 @@ class MainActivity : ComponentActivity() {
 
                         Text(text = "Statut : $statusMessage", style = MaterialTheme.typography.bodySmall)
 
-                        Divider()
+                        HorizontalDivider()
 
-                        // Liste dynamique des mémoires vivantes
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxSize()
