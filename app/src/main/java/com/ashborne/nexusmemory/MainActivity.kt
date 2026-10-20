@@ -47,7 +47,6 @@ class MainActivity : FragmentActivity() {
             var unlockedMemoryIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
             var statusMessage by remember { mutableStateOf("Prêt") }
 
-            // Paramètres WebDAV
             var webDavUrl by remember { mutableStateOf(prefs.getString("webdav_url", "https://example.com/webdav") ?: "") }
             var webDavUser by remember { mutableStateOf(prefs.getString("webdav_user", "user") ?: "") }
             var webDavPass by remember { mutableStateOf(prefs.getString("webdav_pass", "password") ?: "") }
@@ -290,7 +289,7 @@ class MainActivity : FragmentActivity() {
                     }
                 }
 
-                // Dialogue Configuration & Actions WebDAV (Upload & Download)
+                // Boîte de dialogue WebDAV corrigée sans aucun chevauchement de boutons
                 if (showWebDavDialog) {
                     AlertDialog(
                         onDismissRequest = { showWebDavDialog = false },
@@ -301,24 +300,26 @@ class MainActivity : FragmentActivity() {
                                     value = webDavUrl,
                                     onValueChange = { webDavUrl = it },
                                     label = { Text("URL Serveur WebDAV") },
-                                    singleLine = true
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                                 OutlinedTextField(
                                     value = webDavUser,
                                     onValueChange = { webDavUser = it },
                                     label = { Text("Utilisateur") },
-                                    singleLine = true
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                                 OutlinedTextField(
                                     value = webDavPass,
                                     onValueChange = { webDavPass = it },
                                     label = { Text("Mot de passe / Token") },
-                                    singleLine = true
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
-                            }
-                        },
-                        confirmButton = {
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
                                 Button(
                                     onClick = {
                                         prefs.edit()
@@ -365,13 +366,17 @@ class MainActivity : FragmentActivity() {
                                 ) {
                                     Text("Restaurer (Pull)")
                                 }
+
+                                TextButton(
+                                    onClick = { showWebDavDialog = false },
+                                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                                ) {
+                                    Text("Annuler")
+                                }
                             }
                         },
-                        dismissButton = {
-                            TextButton(onClick = { showWebDavDialog = false }) {
-                                Text("Annuler")
-                            }
-                        }
+                        confirmButton = {},
+                        dismissButton = {}
                     )
                 }
 
