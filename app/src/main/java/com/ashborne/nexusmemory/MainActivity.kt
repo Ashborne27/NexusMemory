@@ -1,5 +1,6 @@
 package com.ashborne.nexusmemory
 
+import android.content.Context
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
@@ -31,6 +32,7 @@ class MainActivity : FragmentActivity() {
         val database = MemoryDatabase.getDatabase(applicationContext)
         val dao = database.memoryDao()
         val backupManager = BackupManager(applicationContext, dao)
+        val prefs = getSharedPreferences("nexus_settings", Context.MODE_PRIVATE)
 
         setContent {
             val scope = rememberCoroutineScope()
@@ -40,14 +42,15 @@ class MainActivity : FragmentActivity() {
             var newThoughtText by remember { mutableStateOf("") }
             var isProtected by remember { mutableStateOf(false) }
             var showScanner by remember { mutableStateOf(false) }
+            var showWebDavDialog by remember { mutableStateOf(false) }
             var selectedMemoryForQr by remember { mutableStateOf<MemoryEntity?>(null) }
             var unlockedMemoryIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
             var statusMessage by remember { mutableStateOf("Prêt") }
 
-            // Configuration WebDAV par défaut (extensible via paramètres)
-            val webDavUrl = "https://dav.jiomail.com/remote.php/dav/files/user@jiomail.com" // Exemple Nextcloud/WebDAV
-            val webDavUser = "ashborne"
-            val webDavToken = "nexus_secure_token"
+            // Paramètres WebDAV
+            var webDavUrl by remember { mutableStateOf(prefs.getString("webdav_url", "https://example.com/webdav") ?: "") }
+            var webDavUser by remember { mutableStateOf(prefs.getString("webdav_user", "user") ?: "") }
+            var webDavPass by remember { mutableStateOf(prefs.getString("webdav_pass", "password") ?: "") }
 
             LaunchedEffect(memoriesFlow, searchQuery) {
                 displayedMemories = if (searchQuery.isBlank()) {
@@ -92,7 +95,6 @@ class MainActivity : FragmentActivity() {
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // En-tête harmonisé
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -117,7 +119,6 @@ class MainActivity : FragmentActivity() {
                             }
                         }
 
-                        // Boutons d'action Exporter / Importer Local
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -156,20 +157,12 @@ class MainActivity : FragmentActivity() {
                             ) { Text("Importer") }
                         }
 
-                        // Boutons WebDAV Réel & Scanner QR P2P
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Button(
-                                onClick = {
-                                    statusMessage = "Synchro WebDAV en cours..."
-                                    scope.launch {
-                                        val backupData = backupManager.exportToJson()
-                                        val success = WebDavManager.uploadToWebDav(webDavUrl, webDavUser, webDavToken, backupData)
-                                        statusMessage = if (success) "Cloud WebDAV synchronisé !" else "Échec synchro WebDAV"
-                                    }
-                                },
+                                onClick = { showWebDavDialog = true },
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                             ) { Text("Cloud WebDAV") }
@@ -181,7 +174,6 @@ class MainActivity : FragmentActivity() {
                             ) { Text("Scanner QR") }
                         }
 
-                        // Recherche FTS
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
@@ -190,7 +182,6 @@ class MainActivity : FragmentActivity() {
                             singleLine = true
                         )
 
-                        // Zone d'ajout de pensée
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -227,7 +218,6 @@ class MainActivity : FragmentActivity() {
                             }
                         }
 
-                        // Checkbox KeyStore
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(vertical = 2.dp)
@@ -247,7 +237,6 @@ class MainActivity : FragmentActivity() {
 
                         HorizontalDivider()
 
-                        // Liste dynamique des mémoires
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.weight(1f)
@@ -301,6 +290,62 @@ class MainActivity : FragmentActivity() {
                     }
                 }
 
+                // Dialogue Configuration / Synchronisation WebDAV
+                if (showWebDavDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showWebDavDialog = false },
+                        title = { Text("Configuration Cloud WebDAV") },
+                        text = {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedTextField(
+                                    value = webDavUrl,
+                                    onValueChange = { webDavUrl = it },
+                                    label = { Text("URL Serveur WebDAV") },
+                                    singleLine = true
+                                )
+                                OutlinedTextField(
+                                    value = webDavUser,
+                                    onValueChange = { webDavUser = it },
+                                    label = { Text("Utilisateur") },
+                                    singleLine = true
+                                )
+                                OutlinedTextField(
+                                    value = webDavPass,
+                                    onValueChange = { webDavPass = it },
+                                    label = { Text("Mot de passe / Token") },
+                                    singleLine = true
+                                )
+                            }
+                        },
+                        confirmButton = {
+                            Button(
+                                onClick = {
+                                    prefs.edit()
+                                        .putString("webdav_url", webDavUrl)
+                                        .putString("webdav_user", webDavUser)
+                                        .putString("webdav_pass", webDavPass)
+                                        .apply()
+
+                                    showWebDavDialog = false
+                                    statusMessage = "Synchro WebDAV..."
+                                    scope.launch {
+                                        val backupData = backupManager.exportToJson()
+                                        val success = WebDavManager.uploadToWebDav(webDavUrl, webDavUser, webDavPass, backupData)
+                                        statusMessage = if (success) "Cloud WebDAV synchronisé !" else "Échec synchro WebDAV"
+                                    }
+                                }
+                            ) {
+                                Text("Enregistrer & Synchro")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showWebDavDialog = false }) {
+                                Text("Annuler")
+                            }
+                        }
+                    )
+                }
+
                 // Dialogue QR Code P2P
                 selectedMemoryForQr?.let { memory ->
                     val qrBitmap = remember(memory) {
@@ -321,7 +366,7 @@ class MainActivity : FragmentActivity() {
                                         modifier = Modifier.size(240.dp)
                                     )
                                 } else {
-                                    Text("Erreur lors de la génération du QR Code")
+                                    Text("Erreur de génération QR Code")
                                 }
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
