@@ -35,6 +35,7 @@ import java.io.File
 
 class MainActivity : FragmentActivity() {
     private var mediaPlayer: MediaPlayer? = null
+    private var activeTempAudioFile: File? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,33 +80,49 @@ class MainActivity : FragmentActivity() {
                 }
             }
 
-            fun playAudio(path: String) {
+            fun stopAudio() {
                 try {
                     mediaPlayer?.stop()
                     mediaPlayer?.release()
-                    mediaPlayer = MediaPlayer().apply {
-                        setDataSource(path)
-                        prepare()
-                        start()
-                        setOnCompletionListener {
-                            playingAudioPath = null
-                            statusMessage = "Lecture terminée"
-                        }
-                    }
-                    playingAudioPath = path
-                    statusMessage = "Lecture de la note vocale..."
-                } catch (e: Exception) {
-                    statusMessage = "Erreur de lecture : ${e.localizedMessage}"
-                    playingAudioPath = null
-                }
-            }
-
-            fun stopAudio() {
-                mediaPlayer?.stop()
-                mediaPlayer?.release()
+                } catch (_: Exception) {}
                 mediaPlayer = null
                 playingAudioPath = null
+                activeTempAudioFile?.delete()
+                activeTempAudioFile = null
                 statusMessage = "Lecture arrêtée"
+            }
+
+            fun playAudio(path: String, isMemoryProtected: Boolean) {
+                try {
+                    stopAudio()
+                    val targetFile = File(path)
+                    val playFile = if (isMemoryProtected) {
+                        val decrypted = VoiceRecorderManager.decryptAudioToCache(applicationContext, targetFile)
+                        activeTempAudioFile = decrypted
+                        decrypted
+                    } else {
+                        targetFile
+                    }
+
+                    if (playFile != null && playFile.exists()) {
+                        mediaPlayer = MediaPlayer().apply {
+                            setDataSource(playFile.absolutePath)
+                            prepare()
+                            start()
+                            setOnCompletionListener {
+                                stopAudio()
+                                statusMessage = "Lecture terminée"
+                            }
+                        }
+                        playingAudioPath = path
+                        statusMessage = "Lecture de la note vocale..."
+                    } else {
+                        statusMessage = "Erreur : Fichier introuvable ou échec déchiffrement"
+                    }
+                } catch (e: Exception) {
+                    statusMessage = "Erreur lecture : ${e.localizedMessage}"
+                    stopAudio()
+                }
             }
 
             LaunchedEffect(memoriesFlow, searchQuery) {
@@ -250,20 +267,21 @@ class MainActivity : FragmentActivity() {
                                         audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                                     }
                                 } else {
-                                    val file = voiceRecorder.stopRecording()
+                                    val protectedState = isProtected
+                                    val file = voiceRecorder.stopRecordingAndEncrypt(protectedState)
                                     isRecording = false
                                     if (file != null && file.exists()) {
                                         scope.launch(Dispatchers.IO) {
                                             dao.insertMemory(
                                                 MemoryEntity(
-                                                    title = "Mémoire Vocale",
+                                                    title = if (protectedState) "Note Vocale Chiffrée" else "Mémoire Vocale",
                                                     content = "Audio: ${file.absolutePath}",
                                                     category = "Audio",
-                                                    isProtected = isProtected
+                                                    isProtected = protectedState
                                                 )
                                             )
                                         }
-                                        statusMessage = "Note vocale enregistrée avec succès !"
+                                        statusMessage = if (protectedState) "Note vocale chiffrée AES-256 !" else "Note vocale enregistrée !"
                                     } else {
                                         statusMessage = "Échec de la sauvegarde audio"
                                     }
@@ -396,7 +414,7 @@ class MainActivity : FragmentActivity() {
                                                 ) {
                                                     Button(
                                                         onClick = {
-                                                            if (isPlayingThis) stopAudio() else playAudio(audioPath)
+                                                            if (isPlayingThis) stopAudio() else playAudio(audioPath, memory.isProtected)
                                                         },
                                                         colors = ButtonDefaults.buttonColors(
                                                             containerColor = if (isPlayingThis) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
@@ -405,7 +423,7 @@ class MainActivity : FragmentActivity() {
                                                         Text(if (isPlayingThis) "⏹ Stop" else "▶ Écouter l'Audio")
                                                     }
                                                     Text(
-                                                        text = if (isPlayingThis) "🔊 en lecture..." else "📄 Fichier prêt",
+                                                        text = if (isPlayingThis) "🔊 en lecture..." else if (memory.isProtected) "🔐 AES-256 Chiffré" else "📄 Fichier prêt",
                                                         style = MaterialTheme.typography.bodySmall
                                                     )
                                                 }
@@ -556,7 +574,11 @@ class MainActivity : FragmentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        mediaPlayer?.release()
-        mediaPlayer = null
+        try {
+            mediaPlayer?.release()
+            mediaPlayer = null
+            activeTempAudioFile?.delete()
+            activeTempAudioFile = null
+        } catch (_: Exception) {}
     }
 }
