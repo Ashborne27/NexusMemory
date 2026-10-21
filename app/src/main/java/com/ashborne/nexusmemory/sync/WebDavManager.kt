@@ -1,12 +1,17 @@
 package com.ashborne.nexusmemory.sync
 
+import com.ashborne.nexusmemory.security.KeyStoreHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.InputStream
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.DataInputStream
+import java.io.DataOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import android.util.Base64
+import javax.crypto.CipherInputStream
+import javax.crypto.CipherOutputStream
 
 object WebDavManager {
 
@@ -18,39 +23,7 @@ object WebDavManager {
     ): Boolean = withContext(Dispatchers.IO) {
         try {
             val baseUrl = if (webDavUrl.endsWith("/")) webDavUrl else "$webDavUrl/"
-            val targetUrl = URL("${baseUrl}nexus_backup.json")
-            val connection = targetUrl.openConnection() as HttpURLConnection
-            
-            val auth = "$user:$pass"
-            val encodedAuth = Base64.encodeToString(auth.toByteArray(), Base64.NO_WRAP)
-            
-            connection.requestMethod = "PUT"
-            connection.setRequestProperty("Authorization", "Basic $encodedAuth")
-            connection.setRequestProperty("Content-Type", "application/json")
-            connection.doOutput = true
-
-            connection.outputStream.use { os ->
-                os.write(jsonContent.toByteArray(Charsets.UTF_8))
-            }
-
-            val responseCode = connection.responseCode
-            responseCode in 200..299
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
-        }
-    }
-
-    suspend fun uploadFileToWebDav(
-        webDavUrl: String,
-        user: String,
-        pass: String,
-        file: File
-    ): Boolean = withContext(Dispatchers.IO) {
-        try {
-            if (!file.exists()) return@withContext false
-            val baseUrl = if (webDavUrl.endsWith("/")) webDavUrl else "$webDavUrl/"
-            val targetUrl = URL("${baseUrl}${file.name}")
+            val targetUrl = URL("${baseUrl}nexus_backup.enc")
             val connection = targetUrl.openConnection() as HttpURLConnection
             
             val auth = "$user:$pass"
@@ -61,10 +34,22 @@ object WebDavManager {
             connection.setRequestProperty("Content-Type", "application/octet-stream")
             connection.doOutput = true
 
-            file.inputStream().use { fis ->
-                connection.outputStream.use { os ->
-                    fis.copyTo(os)
-                }
+            val cipher = KeyStoreHelper.getEncryptCipher()
+            val iv = cipher.iv
+
+            val baos = ByteArrayOutputStream()
+            DataOutputStream(baos).use { dos ->
+                dos.writeInt(iv.size)
+                dos.write(iv)
+            }
+            CipherOutputStream(baos, cipher).use { cos ->
+                cos.write(jsonContent.toByteArray(Charsets.UTF_8))
+            }
+
+            val encryptedBytes = baos.toByteArray()
+
+            connection.outputStream.use { os ->
+                os.write(encryptedBytes)
             }
 
             val responseCode = connection.responseCode
@@ -82,7 +67,7 @@ object WebDavManager {
     ): String? = withContext(Dispatchers.IO) {
         try {
             val baseUrl = if (webDavUrl.endsWith("/")) webDavUrl else "$webDavUrl/"
-            val targetUrl = URL("${baseUrl}nexus_backup.json")
+            val targetUrl = URL("${baseUrl}nexus_backup.enc")
             val connection = targetUrl.openConnection() as HttpURLConnection
             
             val auth = "$user:$pass"
@@ -92,9 +77,22 @@ object WebDavManager {
             connection.setRequestProperty("Authorization", "Basic $encodedAuth")
 
             if (connection.responseCode in 200..299) {
-                connection.inputStream.use { inputStream ->
-                    inputStream.bufferedReader().use { it.readText() }
+                val encryptedBytes = connection.inputStream.use { it.readBytes() }
+                
+                val bais = ByteArrayInputStream(encryptedBytes)
+                val dis = DataInputStream(bais)
+                val ivSize = dis.readInt()
+                val iv = ByteArray(ivSize)
+                dis.readFully(iv)
+
+                val cipher = KeyStoreHelper.getDecryptCipher(iv)
+                val decryptedBaos = ByteArrayOutputStream()
+                
+                CipherInputStream(bais, cipher).use { cis ->
+                    cis.copyTo(decryptedBaos)
                 }
+
+                decryptedBaos.toString("UTF-8")
             } else {
                 null
             }
