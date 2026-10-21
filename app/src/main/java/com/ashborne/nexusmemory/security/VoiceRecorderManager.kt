@@ -6,6 +6,8 @@ import android.os.Build
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.DataOutputStream
+import java.io.DataInputStream
 import javax.crypto.Cipher
 import javax.crypto.CipherInputStream
 import javax.crypto.CipherOutputStream
@@ -59,9 +61,10 @@ class VoiceRecorderManager(private val context: Context) {
                 val iv = cipher.iv
 
                 FileOutputStream(finalFile).use { fos ->
-                    // Écriture explicite sans ambiguïté d'overload
-                    fos.write(ByteArray(1) { iv.size.toByte() })
-                    fos.write(iv)
+                    DataOutputStream(fos).use { dos ->
+                        dos.writeInt(iv.size)
+                        dos.write(iv)
+                    }
                     CipherOutputStream(fos, cipher).use { cos ->
                         FileInputStream(raw).use { fis ->
                             fis.copyTo(cos)
@@ -88,15 +91,16 @@ class VoiceRecorderManager(private val context: Context) {
                 val tempCacheFile = File(context.cacheDir, "decrypted_${System.currentTimeMillis()}.m4a")
 
                 FileInputStream(encryptedFile).use { fis ->
-                    val ivSize = fis.read()
-                    if (ivSize == -1) return null
-                    val iv = ByteArray(ivSize)
-                    fis.read(iv)
+                    DataInputStream(fis).use { dis ->
+                        val ivSize = dis.readInt()
+                        val iv = ByteArray(ivSize)
+                        dis.readFully(iv)
 
-                    val cipher = KeyStoreHelper.getDecryptCipher(iv)
-                    CipherInputStream(fis, cipher).use { cis ->
-                        FileOutputStream(tempCacheFile).use { fos ->
-                            cis.copyTo(fos)
+                        val cipher = KeyStoreHelper.getDecryptCipher(iv)
+                        CipherInputStream(fis, cipher).use { cis ->
+                            FileOutputStream(tempCacheFile).use { fos ->
+                                cis.copyTo(fos)
+                            }
                         }
                     }
                 }
