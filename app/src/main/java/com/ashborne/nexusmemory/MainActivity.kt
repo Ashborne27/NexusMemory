@@ -3,6 +3,7 @@ package com.ashborne.nexusmemory
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.media.MediaPlayer
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -33,6 +34,8 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 class MainActivity : FragmentActivity() {
+    private var mediaPlayer: MediaPlayer? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val database = MemoryDatabase.getDatabase(applicationContext)
@@ -49,6 +52,7 @@ class MainActivity : FragmentActivity() {
             var newThoughtText by remember { mutableStateOf("") }
             var isProtected by remember { mutableStateOf(false) }
             var isRecording by remember { mutableStateOf(false) }
+            var playingAudioPath by remember { mutableStateOf<String?>(null) }
             var showScanner by remember { mutableStateOf(false) }
             var showWebDavDialog by remember { mutableStateOf(false) }
             var selectedMemoryForQr by remember { mutableStateOf<MemoryEntity?>(null) }
@@ -59,7 +63,6 @@ class MainActivity : FragmentActivity() {
             var webDavUser by remember { mutableStateOf(prefs.getString("webdav_user", "user") ?: "") }
             var webDavPass by remember { mutableStateOf(prefs.getString("webdav_pass", "password") ?: "") }
 
-            // Lanceur de permission audio dynamique
             val audioPermissionLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.RequestPermission()
             ) { isGranted ->
@@ -74,6 +77,35 @@ class MainActivity : FragmentActivity() {
                 } else {
                     statusMessage = "Permission microphone refusée par l'utilisateur."
                 }
+            }
+
+            fun playAudio(path: String) {
+                try {
+                    mediaPlayer?.stop()
+                    mediaPlayer?.release()
+                    mediaPlayer = MediaPlayer().apply {
+                        setDataSource(path)
+                        prepare()
+                        start()
+                        setOnCompletionListener {
+                            playingAudioPath = null
+                            statusMessage = "Lecture terminée"
+                        }
+                    }
+                    playingAudioPath = path
+                    statusMessage = "Lecture de la note vocale..."
+                } catch (e: Exception) {
+                    statusMessage = "Erreur de lecture : ${e.localizedMessage}"
+                    playingAudioPath = null
+                }
+            }
+
+            fun stopAudio() {
+                mediaPlayer?.stop()
+                mediaPlayer?.release()
+                mediaPlayer = null
+                playingAudioPath = null
+                statusMessage = "Lecture arrêtée"
             }
 
             LaunchedEffect(memoriesFlow, searchQuery) {
@@ -134,6 +166,7 @@ class MainActivity : FragmentActivity() {
                             Button(
                                 onClick = {
                                     unlockedMemoryIds = emptySet()
+                                    stopAudio()
                                     statusMessage = "Mémoires verrouillées !"
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
@@ -198,7 +231,6 @@ class MainActivity : FragmentActivity() {
                             ) { Text("Scanner QR") }
                         }
 
-                        // Bouton d'enregistrement vocal sécurisé
                         Button(
                             onClick = {
                                 if (!isRecording) {
@@ -215,7 +247,6 @@ class MainActivity : FragmentActivity() {
                                             statusMessage = "Échec du démarrage du micro"
                                         }
                                     } else {
-                                        // Déclenchement explicite de la demande système
                                         audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                                     }
                                 } else {
@@ -316,6 +347,8 @@ class MainActivity : FragmentActivity() {
                         ) {
                             items(displayedMemories) { memory ->
                                 val isUnlocked = !memory.isProtected || unlockedMemoryIds.contains(memory.id)
+                                val isAudio = memory.content.startsWith("Audio: ")
+                                val audioPath = if (isAudio) memory.content.removePrefix("Audio: ") else null
 
                                 Card(
                                     modifier = Modifier
@@ -332,7 +365,7 @@ class MainActivity : FragmentActivity() {
                                                         statusMessage = "Échec biométrique : $err"
                                                     }
                                                 )
-                                            } else {
+                                            } else if (!isAudio) {
                                                 selectedMemoryForQr = memory
                                             }
                                         }
@@ -340,7 +373,8 @@ class MainActivity : FragmentActivity() {
                                     Column(modifier = Modifier.padding(12.dp)) {
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Text(text = memory.title, style = MaterialTheme.typography.titleMedium)
                                             if (memory.isProtected) {
@@ -352,10 +386,38 @@ class MainActivity : FragmentActivity() {
                                             }
                                         }
                                         Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = if (isUnlocked) memory.content else "•••••••••••••••••••••••••••• (Appuyez pour déverrouiller)",
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
+                                        if (isUnlocked) {
+                                            if (isAudio && audioPath != null) {
+                                                val isPlayingThis = playingAudioPath == audioPath
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                    modifier = Modifier.padding(top = 4.dp)
+                                                ) {
+                                                    Button(
+                                                        onClick = {
+                                                            if (isPlayingThis) stopAudio() else playAudio(audioPath)
+                                                        },
+                                                        colors = ButtonDefaults.buttonColors(
+                                                            containerColor = if (isPlayingThis) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                                        )
+                                                    ) {
+                                                        Text(if (isPlayingThis) "⏹ Stop" else "▶ Écouter l'Audio")
+                                                    }
+                                                    Text(
+                                                        text = if (isPlayingThis) "🔊 en lecture..." else "📄 Fichier prêt",
+                                                        style = MaterialTheme.typography.bodySmall
+                                                    )
+                                                }
+                                            } else {
+                                                Text(text = memory.content, style = MaterialTheme.typography.bodyMedium)
+                                            }
+                                        } else {
+                                            Text(
+                                                text = "•••••••••••••••••••••••••••• (Appuyez pour déverrouiller)",
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -490,5 +552,11 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaPlayer?.release()
+        mediaPlayer = null
     }
 }
