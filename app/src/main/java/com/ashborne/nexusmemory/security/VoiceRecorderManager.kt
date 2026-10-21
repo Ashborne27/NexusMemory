@@ -6,6 +6,7 @@ import android.os.Build
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.OutputStream
 import java.io.DataOutputStream
 import java.io.DataInputStream
 import javax.crypto.Cipher
@@ -64,8 +65,10 @@ class VoiceRecorderManager(private val context: Context) {
                     DataOutputStream(fos).use { dos ->
                         dos.writeInt(iv.size)
                     }
-                    // Écriture directe sur le FileOutputStream pour éliminer toute ambiguïté d'overload
-                    fos.write(iv)
+                    // Cast explicite en OutputStream pour supprimer définitivement l'ambiguïté Kotlin
+                    val outStream: OutputStream = fos
+                    outStream.write(iv)
+
                     CipherOutputStream(fos, cipher).use { cos ->
                         FileInputStream(raw).use { fis ->
                             fis.copyTo(cos)
