@@ -1,30 +1,39 @@
 package com.ashborne.nexusmemory.sync
 
-import android.util.Base64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.io.OutputStreamWriter
+import java.io.File
+import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import android.util.Base64
 
 object WebDavManager {
 
-    suspend fun uploadToWebDav(serverUrl: String, username: String, token: String, data: String): Boolean = withContext(Dispatchers.IO) {
+    suspend fun uploadToWebDav(
+        webDavUrl: String,
+        user: String,
+        pass: String,
+        jsonContent: String
+    ): Boolean = withContext(Dispatchers.IO) {
         try {
-            val url = URL("$serverUrl/nexus_backup.nexus")
-            val connection = (url.openConnection() as HttpURLConnection).apply {
-                requestMethod = "PUT"
-                doOutput = true
-                val credentials = "$username:$token"
-                val encodedAuth = Base64.encodeToString(credentials.toByteArray(), Base64.NO_WRAP)
-                setRequestProperty("Authorization", "Basic $encodedAuth")
-                setRequestProperty("Content-Type", "application/json; charset=utf-8")
+            val baseUrl = if (webDavUrl.endsWith("/")) webDavUrl else "$webDavUrl/"
+            val targetUrl = URL("${baseUrl}nexus_backup.json")
+            val connection = targetUrl.openConnection() as HttpURLConnection
+            
+            val auth = "$user:$pass"
+            val encodedAuth = Base64.encodeToString(auth.toByteArray(), Base64.NO_WRAP)
+            
+            connection.requestMethod = "PUT"
+            connection.setRequestProperty("Authorization", "Basic $encodedAuth")
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.doOutput = true
+
+            connection.outputStream.use { os ->
+                os.write(jsonContent.toByteArray(Charsets.UTF_8))
             }
-            OutputStreamWriter(connection.outputStream).use { it.write(data) }
+
             val responseCode = connection.responseCode
-            connection.disconnect()
             responseCode in 200..299
         } catch (e: Exception) {
             e.printStackTrace()
@@ -32,23 +41,61 @@ object WebDavManager {
         }
     }
 
-    suspend fun downloadFromWebDav(serverUrl: String, username: String, token: String): String? = withContext(Dispatchers.IO) {
+    suspend fun uploadFileToWebDav(
+        webDavUrl: String,
+        user: String,
+        pass: String,
+        file: File
+    ): Boolean = withContext(Dispatchers.IO) {
         try {
-            val url = URL("$serverUrl/nexus_backup.nexus")
-            val connection = (url.openConnection() as HttpURLConnection).apply {
-                requestMethod = "GET"
-                val credentials = "$username:$token"
-                val encodedAuth = Base64.encodeToString(credentials.toByteArray(), Base64.NO_WRAP)
-                setRequestProperty("Authorization", "Basic $encodedAuth")
+            if (!file.exists()) return@withContext false
+            val baseUrl = if (webDavUrl.endsWith("/")) webDavUrl else "$webDavUrl/"
+            val targetUrl = URL("${baseUrl}${file.name}")
+            val connection = targetUrl.openConnection() as HttpURLConnection
+            
+            val auth = "$user:$pass"
+            val encodedAuth = Base64.encodeToString(auth.toByteArray(), Base64.NO_WRAP)
+            
+            connection.requestMethod = "PUT"
+            connection.setRequestProperty("Authorization", "Basic $encodedAuth")
+            connection.setRequestProperty("Content-Type", "application/octet-stream")
+            connection.doOutput = true
+
+            file.inputStream().use { fis ->
+                connection.outputStream.use { os ->
+                    fis.copyTo(os)
+                }
             }
+
+            val responseCode = connection.responseCode
+            responseCode in 200..299
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    suspend fun downloadFromWebDav(
+        webDavUrl: String,
+        user: String,
+        pass: String
+    ): String? = withContext(Dispatchers.IO) {
+        try {
+            val baseUrl = if (webDavUrl.endsWith("/")) webDavUrl else "$webDavUrl/"
+            val targetUrl = URL("${baseUrl}nexus_backup.json")
+            val connection = targetUrl.openConnection() as HttpURLConnection
+            
+            val auth = "$user:$pass"
+            val encodedAuth = Base64.encodeToString(auth.toByteArray(), Base64.NO_WRAP)
+            
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("Authorization", "Basic $encodedAuth")
+
             if (connection.responseCode in 200..299) {
-                val reader = BufferedReader(InputStreamReader(connection.inputStream))
-                val content = reader.readText()
-                reader.close()
-                connection.disconnect()
-                content
+                connection.inputStream.use { inputStream ->
+                    inputStream.bufferedReader().use { it.readText() }
+                }
             } else {
-                connection.disconnect()
                 null
             }
         } catch (e: Exception) {
