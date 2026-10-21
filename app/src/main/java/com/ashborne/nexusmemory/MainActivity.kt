@@ -26,6 +26,7 @@ import com.ashborne.nexusmemory.data.MemoryEntity
 import com.ashborne.nexusmemory.security.BiometricHelper
 import com.ashborne.nexusmemory.security.VoiceRecorderManager
 import com.ashborne.nexusmemory.sync.WebDavManager
+import com.ashborne.nexusmemory.ui.AudioWaveformVisualizer
 import com.ashborne.nexusmemory.ui.CameraQrScanner
 import com.ashborne.nexusmemory.ui.QrCodeGenerator
 import kotlinx.coroutines.Dispatchers
@@ -407,25 +408,27 @@ class MainActivity : FragmentActivity() {
                                         if (isUnlocked) {
                                             if (isAudio && audioPath != null) {
                                                 val isPlayingThis = playingAudioPath == audioPath
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                                    modifier = Modifier.padding(top = 4.dp)
-                                                ) {
-                                                    Button(
-                                                        onClick = {
-                                                            if (isPlayingThis) stopAudio() else playAudio(audioPath, memory.isProtected)
-                                                        },
-                                                        colors = ButtonDefaults.buttonColors(
-                                                            containerColor = if (isPlayingThis) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                                                        )
+                                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                                                     ) {
-                                                        Text(if (isPlayingThis) "⏹ Stop" else "▶ Écouter l'Audio")
+                                                        Button(
+                                                            onClick = {
+                                                                if (isPlayingThis) stopAudio() else playAudio(audioPath, memory.isProtected)
+                                                            },
+                                                            colors = ButtonDefaults.buttonColors(
+                                                                containerColor = if (isPlayingThis) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                                            )
+                                                        ) {
+                                                            Text(if (isPlayingThis) "⏹ Stop" else "▶ Écouter l'Audio")
+                                                        }
+                                                        Text(
+                                                            text = if (isPlayingThis) "🔊 en lecture..." else if (memory.isProtected) "🔐 AES-256 Chiffré" else "📄 Fichier prêt",
+                                                            style = MaterialTheme.typography.bodySmall
+                                                        )
                                                     }
-                                                    Text(
-                                                        text = if (isPlayingThis) "🔊 en lecture..." else if (memory.isProtected) "🔐 AES-256 Chiffré" else "📄 Fichier prêt",
-                                                        style = MaterialTheme.typography.bodySmall
-                                                    )
+                                                    AudioWaveformVisualizer(isPlaying = isPlayingThis)
                                                 }
                                             } else {
                                                 Text(text = memory.content, style = MaterialTheme.typography.bodyMedium)
@@ -482,16 +485,16 @@ class MainActivity : FragmentActivity() {
                                             .apply()
 
                                         showWebDavDialog = false
-                                        statusMessage = "Téléversement WebDAV..."
+                                        statusMessage = "Téléversement WebDAV Chiffré..."
                                         scope.launch {
                                             val backupData = backupManager.exportToJson()
                                             val success = WebDavManager.uploadToWebDav(webDavUrl, webDavUser, webDavPass, backupData)
-                                            statusMessage = if (success) "Sauvegarde WebDAV envoyée !" else "Échec téléversement WebDAV"
+                                            statusMessage = if (success) "Sauvegarde WebDAV envoyée et chiffrée !" else "Échec téléversement WebDAV"
                                         }
                                     },
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text("Sauvegarder (Push)")
+                                    Text("Sauvegarder (Push Chiffré)")
                                 }
 
                                 Button(
@@ -508,7 +511,7 @@ class MainActivity : FragmentActivity() {
                                             val downloadedData = WebDavManager.downloadFromWebDav(webDavUrl, webDavUser, webDavPass)
                                             if (downloadedData != null) {
                                                 backupManager.importFromJson(downloadedData)
-                                                statusMessage = "Restauration Cloud réussie !"
+                                                statusMessage = "Restauration Cloud Chiffrée réussie !"
                                             } else {
                                                 statusMessage = "Échec téléchargement WebDAV"
                                             }
@@ -517,7 +520,7 @@ class MainActivity : FragmentActivity() {
                                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text("Restaurer (Pull)")
+                                    Text("Restaurer (Pull Chiffré)")
                                 }
 
                                 TextButton(
