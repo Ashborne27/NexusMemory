@@ -59,7 +59,8 @@ class VoiceRecorderManager(private val context: Context) {
                 val iv = cipher.iv
 
                 FileOutputStream(finalFile).use { fos ->
-                    fos.write(iv.size)
+                    // Écriture explicite sans ambiguïté d'overload
+                    fos.write(ByteArray(1) { iv.size.toByte() })
                     fos.write(iv)
                     CipherOutputStream(fos, cipher).use { cos ->
                         FileInputStream(raw).use { fis ->
@@ -88,6 +89,7 @@ class VoiceRecorderManager(private val context: Context) {
 
                 FileInputStream(encryptedFile).use { fis ->
                     val ivSize = fis.read()
+                    if (ivSize == -1) return null
                     val iv = ByteArray(ivSize)
                     fis.read(iv)
 
