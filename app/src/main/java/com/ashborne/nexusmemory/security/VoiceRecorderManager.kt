@@ -63,8 +63,9 @@ class VoiceRecorderManager(private val context: Context) {
                 FileOutputStream(finalFile).use { fos ->
                     DataOutputStream(fos).use { dos ->
                         dos.writeInt(iv.size)
-                        dos.write(iv)
                     }
+                    // Écriture directe sur le FileOutputStream pour éliminer toute ambiguïté d'overload
+                    fos.write(iv)
                     CipherOutputStream(fos, cipher).use { cos ->
                         FileInputStream(raw).use { fis ->
                             fis.copyTo(cos)
@@ -91,16 +92,15 @@ class VoiceRecorderManager(private val context: Context) {
                 val tempCacheFile = File(context.cacheDir, "decrypted_${System.currentTimeMillis()}.m4a")
 
                 FileInputStream(encryptedFile).use { fis ->
-                    DataInputStream(fis).use { dis ->
-                        val ivSize = dis.readInt()
-                        val iv = ByteArray(ivSize)
-                        dis.readFully(iv)
+                    val ivSize = DataInputStream(fis).readInt()
+                    val iv = ByteArray(ivSize)
+                    val readBytes = fis.read(iv)
+                    if (readBytes != ivSize) return null
 
-                        val cipher = KeyStoreHelper.getDecryptCipher(iv)
-                        CipherInputStream(fis, cipher).use { cis ->
-                            FileOutputStream(tempCacheFile).use { fos ->
-                                cis.copyTo(fos)
-                            }
+                    val cipher = KeyStoreHelper.getDecryptCipher(iv)
+                    CipherInputStream(fis, cipher).use { cis ->
+                        FileOutputStream(tempCacheFile).use { fos ->
+                            cis.copyTo(fos)
                         }
                     }
                 }
