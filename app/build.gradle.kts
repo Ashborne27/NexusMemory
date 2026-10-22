@@ -75,7 +75,8 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     kapt(libs.androidx.room.compiler)
 
-    // WorkManager injecté explicitement pour garantir son inclusion absolue dans le classpath
+    // WorkManager complet (runtime + ktx) pour garantir la visibilité absolue dans le classpath
+    implementation("androidx.work:work-runtime:2.9.0")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     testImplementation(libs.junit)
