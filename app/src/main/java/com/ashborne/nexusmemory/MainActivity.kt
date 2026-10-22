@@ -20,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.work.*
 import com.ashborne.nexusmemory.backup.BackupManager
 import com.ashborne.nexusmemory.data.MemoryDatabase
 import com.ashborne.nexusmemory.data.MemoryEntity
@@ -29,10 +30,12 @@ import com.ashborne.nexusmemory.sync.WebDavManager
 import com.ashborne.nexusmemory.ui.AudioWaveformVisualizer
 import com.ashborne.nexusmemory.ui.CameraQrScanner
 import com.ashborne.nexusmemory.ui.QrCodeGenerator
+import com.ashborne.nexusmemory.worker.SyncWorker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 class MainActivity : FragmentActivity() {
     private var mediaPlayer: MediaPlayer? = null
@@ -45,6 +48,8 @@ class MainActivity : FragmentActivity() {
         val backupManager = BackupManager(applicationContext, dao)
         val voiceRecorder = VoiceRecorderManager(applicationContext)
         val prefs = getSharedPreferences("nexus_settings", Context.MODE_PRIVATE)
+
+        scheduleBackgroundSync(applicationContext)
 
         setContent {
             val scope = rememberCoroutineScope()
@@ -59,7 +64,7 @@ class MainActivity : FragmentActivity() {
             var showWebDavDialog by remember { mutableStateOf(false) }
             var selectedMemoryForQr by remember { mutableStateOf<MemoryEntity?>(null) }
             var unlockedMemoryIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
-            var statusMessage by remember { mutableStateOf("NexusMemory v7.0 - Prêt") }
+            var statusMessage by remember { mutableStateOf("NexusMemory v7.0 - Prêt (Sync Auto Active)") }
 
             var webDavUrl by remember { mutableStateOf(prefs.getString("webdav_url", "https://example.com/webdav") ?: "") }
             var webDavUser by remember { mutableStateOf(prefs.getString("webdav_user", "user") ?: "") }
@@ -573,6 +578,23 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
+    }
+
+    private fun scheduleBackgroundSync(context: Context) {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.UNMETERED)
+            .setRequiresCharging(true)
+            .build()
+
+        val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(24, TimeUnit.HOURS)
+            .setConstraints(constraints)
+            .build()
+
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            "NexusSyncWorker",
+            ExistingPeriodicWorkPolicy.KEEP,
+            syncRequest
+        )
     }
 
     override fun onDestroy() {
