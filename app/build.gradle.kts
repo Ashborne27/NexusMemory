@@ -75,8 +75,8 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     kapt(libs.androidx.room.compiler)
 
-    // WorkManager restauré et explicite pour MainActivity et SyncWorker
-    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    // WorkManager via le catalogue officiel
+    implementation(libs.androidx.work.runtime.ktx)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
