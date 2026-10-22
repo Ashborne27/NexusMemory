@@ -1,20 +1,19 @@
 package com.ashborne.nexusmemory.worker
 
 import android.content.Context
-import androidx.work.Worker
+import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.Result
 import com.ashborne.nexusmemory.backup.BackupManager
 import com.ashborne.nexusmemory.data.MemoryDatabase
 import com.ashborne.nexusmemory.sync.WebDavManager
-import kotlinx.coroutines.runBlocking
 
 class SyncWorker(
-    context: Context,
+    appContext: Context,
     workerParams: WorkerParameters
-) : Worker(context, workerParams) {
+) : CoroutineWorker(appContext, workerParams) {
 
-    override fun doWork(): Result {
+    override suspend fun doWork(): Result {
         return try {
             val prefs = applicationContext.getSharedPreferences("nexus_settings", Context.MODE_PRIVATE)
             val webDavUrl = prefs.getString("webdav_url", null) ?: return Result.success()
@@ -25,9 +24,7 @@ class SyncWorker(
             val backupManager = BackupManager(applicationContext, dao)
 
             val backupJson = backupManager.exportToJson()
-            val success = runBlocking {
-                WebDavManager.uploadToWebDav(webDavUrl, webDavUser, webDavPass, backupJson)
-            }
+            val success = WebDavManager.uploadToWebDav(webDavUrl, webDavUser, webDavPass, backupJson)
 
             if (success) Result.success() else Result.retry()
         } catch (e: Exception) {
