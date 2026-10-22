@@ -75,8 +75,8 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     kapt(libs.androidx.room.compiler)
 
-    // WorkManager via le Catalogue de Versions
-    implementation(libs.androidx.work.runtime.ktx)
+    // WorkManager déclaré en direct (100% étanche aux erreurs de catalogue)
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
