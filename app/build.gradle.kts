@@ -75,7 +75,7 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     kapt(libs.androidx.room.compiler)
 
-    // WorkManager direct et infaillible
+    // WorkManager injecté en direct pour garantir sa résolution absolue
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     testImplementation(libs.junit)
