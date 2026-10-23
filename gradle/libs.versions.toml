@@ -1,5 +1,5 @@
 [versions]
-agp = "8.2.0"
+agp = "8.1.4"
 kotlin = "1.9.22"
 coreKtx = "1.12.0"
 junit = "4.13.2"
@@ -48,4 +48,4 @@ androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-kotlin-kapt = { id = "kotlin-kapt", version.ref = "kotlin" }
+kotlin-kapt = { id = "kotlin-kapt" }
