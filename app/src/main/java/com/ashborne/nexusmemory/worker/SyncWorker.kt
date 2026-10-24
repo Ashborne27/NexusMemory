@@ -3,15 +3,16 @@ package com.ashborne.nexusmemory.worker
 import android.content.Context
 import androidx.work.Worker
 import androidx.work.WorkerParameters
+import androidx.work.Result
 import com.ashborne.nexusmemory.backup.BackupManager
 import com.ashborne.nexusmemory.data.MemoryDatabase
 import com.ashborne.nexusmemory.sync.WebDavManager
 import kotlinx.coroutines.runBlocking
 
 class SyncWorker(
-    context: Context,
-    params: WorkerParameters
-) : Worker(context, params) {
+    appContext: Context,
+    workerParams: WorkerParameters
+) : Worker(appContext, workerParams) {
 
     override fun doWork(): Result {
         return try {
