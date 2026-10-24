@@ -17,12 +17,9 @@ class SyncWorker(
     override fun doWork(): ListenableWorker.Result {
         return try {
             val prefs = appContext.getSharedPreferences("nexus_settings", Context.MODE_PRIVATE)
-            val webDavUrl = prefs.getString("webdav_url", null) 
-                ?: return ListenableWorker.Result.success()
-            val webDavUser = prefs.getString("webdav_user", null) 
-                ?: return ListenableWorker.Result.success()
-            val webDavPass = prefs.getString("webdav_pass", null) 
-                ?: return ListenableWorker.Result.success()
+            val webDavUrl = prefs.getString("webdav_url", null) ?: return ListenableWorker.Result.success()
+            val webDavUser = prefs.getString("webdav_user", null) ?: return ListenableWorker.Result.success()
+            val webDavPass = prefs.getString("webdav_pass", null) ?: return ListenableWorker.Result.success()
 
             val dao = MemoryDatabase.getDatabase(appContext).memoryDao()
             val backupManager = BackupManager(appContext, dao)
