@@ -10,29 +10,29 @@ import com.ashborne.nexusmemory.sync.WebDavManager
 import kotlinx.coroutines.runBlocking
 
 class SyncWorker(
-    private val appContext: Context,
+    appContext: Context,
     workerParams: WorkerParameters
 ) : Worker(appContext, workerParams) {
 
-    override fun doWork(): androidx.work.ListenableWorker.Result {
+    override fun doWork(): ListenableWorker.Result {
         return try {
-            val prefs = appContext.getSharedPreferences("nexus_settings", Context.MODE_PRIVATE)
-            val webDavUrl = prefs.getString("webdav_url", null) ?: return androidx.work.ListenableWorker.Result.success()
-            val webDavUser = prefs.getString("webdav_user", null) ?: return androidx.work.ListenableWorker.Result.success()
-            val webDavPass = prefs.getString("webdav_pass", null) ?: return androidx.work.ListenableWorker.Result.success()
+            val prefs = applicationContext.getSharedPreferences("nexus_settings", Context.MODE_PRIVATE)
+            val webDavUrl = prefs.getString("webdav_url", null) ?: return ListenableWorker.Result.success()
+            val webDavUser = prefs.getString("webdav_user", null) ?: return ListenableWorker.Result.success()
+            val webDavPass = prefs.getString("webdav_pass", null) ?: return ListenableWorker.Result.success()
 
-            val dao = MemoryDatabase.getDatabase(appContext).memoryDao()
-            val backupManager = BackupManager(appContext, dao)
+            val dao = MemoryDatabase.getDatabase(applicationContext).memoryDao()
+            val backupManager = BackupManager(applicationContext, dao)
 
             val success = runBlocking {
                 val backupJson = backupManager.exportToJson()
                 WebDavManager.uploadToWebDav(webDavUrl, webDavUser, webDavPass, backupJson)
             }
 
-            if (success) androidx.work.ListenableWorker.Result.success() else androidx.work.ListenableWorker.Result.retry()
+            if (success) ListenableWorker.Result.success() else ListenableWorker.Result.retry()
         } catch (e: Exception) {
             e.printStackTrace()
-            androidx.work.ListenableWorker.Result.retry()
+            ListenableWorker.Result.retry()
         }
     }
 }
