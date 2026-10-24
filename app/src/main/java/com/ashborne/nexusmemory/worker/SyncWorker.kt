@@ -3,7 +3,7 @@ package com.ashborne.nexusmemory.worker
 import android.content.Context
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import androidx.work.Result
+import androidx.work.ListenableWorker
 import com.ashborne.nexusmemory.backup.BackupManager
 import com.ashborne.nexusmemory.data.MemoryDatabase
 import com.ashborne.nexusmemory.sync.WebDavManager
@@ -14,13 +14,13 @@ class SyncWorker(
     workerParams: WorkerParameters
 ) : Worker(appContext, workerParams) {
 
-    override fun doWork(): Result {
+    override fun doWork(): androidx.work.ListenableWorker.Result {
         return try {
             val ctx = applicationContext
             val prefs = ctx.getSharedPreferences("nexus_settings", Context.MODE_PRIVATE)
-            val webDavUrl = prefs.getString("webdav_url", null) ?: return Result.success()
-            val webDavUser = prefs.getString("webdav_user", null) ?: return Result.success()
-            val webDavPass = prefs.getString("webdav_pass", null) ?: return Result.success()
+            val webDavUrl = prefs.getString("webdav_url", null) ?: return androidx.work.ListenableWorker.Result.success()
+            val webDavUser = prefs.getString("webdav_user", null) ?: return androidx.work.ListenableWorker.Result.success()
+            val webDavPass = prefs.getString("webdav_pass", null) ?: return androidx.work.ListenableWorker.Result.success()
 
             val dao = MemoryDatabase.getDatabase(ctx).memoryDao()
             val backupManager = BackupManager(ctx, dao)
@@ -30,10 +30,10 @@ class SyncWorker(
                 WebDavManager.uploadToWebDav(webDavUrl, webDavUser, webDavPass, backupJson)
             }
 
-            if (success) Result.success() else Result.retry()
+            if (success) androidx.work.ListenableWorker.Result.success() else androidx.work.ListenableWorker.Result.retry()
         } catch (e: Exception) {
             e.printStackTrace()
-            Result.retry()
+            androidx.work.ListenableWorker.Result.retry()
         }
     }
 }
