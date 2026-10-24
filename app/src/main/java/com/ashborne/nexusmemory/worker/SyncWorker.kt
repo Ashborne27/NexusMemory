@@ -16,10 +16,7 @@ class SyncWorker(
 
     override fun doWork(): ListenableWorker.Result {
         return try {
-            // Utilisation de la méthode native Java getApplicationContext() 
-            // pour garantir une invulnérabilité totale face au classpath release
             val ctx = getApplicationContext()
-            
             val prefs = ctx.getSharedPreferences("nexus_settings", Context.MODE_PRIVATE)
             val webDavUrl = prefs.getString("webdav_url", null) ?: return ListenableWorker.Result.success()
             val webDavUser = prefs.getString("webdav_user", null) ?: return ListenableWorker.Result.success()
