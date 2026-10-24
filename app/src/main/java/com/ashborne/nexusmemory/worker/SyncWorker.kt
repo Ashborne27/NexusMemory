@@ -3,7 +3,7 @@ package com.ashborne.nexusmemory.worker
 import android.content.Context
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import androidx.work.Result
+import androidx.work.Result as WorkResult
 import com.ashborne.nexusmemory.backup.BackupManager
 import com.ashborne.nexusmemory.data.MemoryDatabase
 import com.ashborne.nexusmemory.sync.WebDavManager
@@ -14,26 +14,25 @@ class SyncWorker(
     workerParams: WorkerParameters
 ) : Worker(appContext, workerParams) {
 
-    override fun doWork(): Result {
+    override fun doWork(): WorkResult {
         return try {
-            val ctx = applicationContext
-            val prefs = ctx.getSharedPreferences("nexus_settings", Context.MODE_PRIVATE)
-            val webDavUrl = prefs.getString("webdav_url", null) ?: return Result.success()
-            val webDavUser = prefs.getString("webdav_user", null) ?: return Result.success()
-            val webDavPass = prefs.getString("webdav_pass", null) ?: return Result.success()
+            val prefs = applicationContext.getSharedPreferences("nexus_settings", Context.MODE_PRIVATE)
+            val webDavUrl = prefs.getString("webdav_url", null) ?: return WorkResult.success()
+            val webDavUser = prefs.getString("webdav_user", null) ?: return WorkResult.success()
+            val webDavPass = prefs.getString("webdav_pass", null) ?: return WorkResult.success()
 
-            val dao = MemoryDatabase.getDatabase(ctx).memoryDao()
-            val backupManager = BackupManager(ctx, dao)
+            val dao = MemoryDatabase.getDatabase(applicationContext).memoryDao()
+            val backupManager = BackupManager(applicationContext, dao)
 
             val success = runBlocking {
                 val backupJson = backupManager.exportToJson()
                 WebDavManager.uploadToWebDav(webDavUrl, webDavUser, webDavPass, backupJson)
             }
 
-            if (success) Result.success() else Result.retry()
+            if (success) WorkResult.success() else WorkResult.retry()
         } catch (e: Exception) {
             e.printStackTrace()
-            Result.retry()
+            WorkResult.retry()
         }
     }
 }
