@@ -1,4 +1,4 @@
-name: Build Release APK
+name: Build Debug APK
 
 on:
   push:
@@ -22,7 +22,7 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Purge Cache & Build Release APK
+    - name: Purge Cache & Build Debug APK
       run: |
         rm -rf ~/.gradle/caches ~/.gradle/wrapper
         rm -rf .gradle app/.gradle build app/build
