@@ -26,7 +26,7 @@ jobs:
       run: |
         rm -rf ~/.gradle/caches ~/.gradle/wrapper
         rm -rf .gradle app/.gradle build app/build
-        ./gradlew clean assembleRelease --refresh-dependencies --no-daemon
+        ./gradlew clean assembleDebug --refresh-dependencies --no-daemon
       env:
         ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
 
