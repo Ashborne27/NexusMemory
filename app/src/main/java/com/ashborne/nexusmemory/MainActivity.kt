@@ -64,7 +64,7 @@ class MainActivity : FragmentActivity() {
             var showWebDavDialog by remember { mutableStateOf(false) }
             var selectedMemoryForQr by remember { mutableStateOf<MemoryEntity?>(null) }
             var unlockedMemoryIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
-            var statusMessage by remember { mutableStateOf("NexusMemory v7.0 - Prêt (Sync Auto Active)") }
+            var statusMessage by remember { mutableStateOf("NexusMemory v8.0 - Prêt (Sync Auto Active)") }
 
             var webDavUrl by remember { mutableStateOf(prefs.getString("webdav_url", "https://example.com/webdav") ?: "") }
             var webDavUser by remember { mutableStateOf(prefs.getString("webdav_user", "user") ?: "") }
@@ -180,7 +180,7 @@ class MainActivity : FragmentActivity() {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "NexusMemory v7.0",
+                                text = "NexusMemory v8.0",
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.weight(1f),
                                 maxLines = 1
