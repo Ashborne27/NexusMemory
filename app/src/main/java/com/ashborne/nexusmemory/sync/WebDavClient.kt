@@ -61,7 +61,7 @@ class WebDavClient(
                     destinationFile.outputStream().use { output ->
                         input.copyTo(output)
                     }
-                } == true
+                } != null
             }
         } catch (e: IOException) {
             false
