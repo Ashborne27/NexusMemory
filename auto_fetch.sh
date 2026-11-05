@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -e
 
-echo "=== 🏛️ SYNCHRONISATION ET SURVEILLANCE (NEXUS MEMORY v9.0) ==="
+echo "=== 🏛️ SYNCHRONISATION ET SURVEILLANCE (NEXUS MEMORY v11.0) ==="
 cd ~/nexus-core
 
 # Pause de courtoisie pour laisser GitHub Actions initialiser le webhook
@@ -46,9 +46,9 @@ RAW_APK=$(find ./downloaded_artifact -name "*.apk" | head -n 1)
 if [ -n "$RAW_APK" ] && [ -f "$RAW_APK" ]; then
     termux-setup-storage 2>/dev/null || true
     mkdir -p /storage/emulated/0/Download
-    cp -f "$RAW_APK" /storage/emulated/0/Download/NexusMemory-v9.0.apk
+    cp -f "$RAW_APK" /storage/emulated/0/Download/NexusMemory-v11.0.apk
     echo "=== 🌟 SUCCÈS ABSOLU : FICHIER PRÊT DANS LE DOSSIER DOWNLOAD ==="
-    ls -lh /storage/emulated/0/Download/NexusMemory-v9.0.apk
+    ls -lh /storage/emulated/0/Download/NexusMemory-v11.0.apk
 else
     echo "❌ Erreur : Aucun fichier .apk trouvé dans l'artefact téléchargé."
     exit 1
