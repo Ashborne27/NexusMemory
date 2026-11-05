@@ -103,3 +103,4 @@ kapt {
 // Fix Room KAPT incremental crash for v11.0
 // Stable Room v2.6.1 configuration for NexusMemory v11.0
 // Architecture transition to KSP for NexusMemory v11.0
+// Force KSP compilation clean build for NexusMemory v11.0
