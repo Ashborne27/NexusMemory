@@ -1,4 +1,5 @@
 plugins {
+    id("com.google.devtools.ksp") version "2.0.21-1.0.25"
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("kotlin-kapt")
@@ -101,3 +102,4 @@ kapt {
 // Room KAPT stabilization patch for NexusMemory v11.0
 // Fix Room KAPT incremental crash for v11.0
 // Stable Room v2.6.1 configuration for NexusMemory v11.0
+// Architecture transition to KSP for NexusMemory v11.0
