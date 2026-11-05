@@ -99,3 +99,4 @@ kapt {
     }
 }
 // Room KAPT stabilization patch for NexusMemory v11.0
+// Fix Room KAPT incremental crash for v11.0
