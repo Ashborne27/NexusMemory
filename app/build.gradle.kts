@@ -91,3 +91,11 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
 // Force v11.0 synchronization
+
+kapt {
+    correctErrorTypes = true
+    arguments {
+        arg("room.schemaLocation", "$projectDir/schemas")
+    }
+}
+// Room KAPT stabilization patch for NexusMemory v11.0
