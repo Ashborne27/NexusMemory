@@ -77,7 +77,7 @@ dependencies {
     // Room Database & FTS
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
-    kapt("androidx.room:room-compiler:2.6.1")
+    ksp("androidx.room:room-compiler:2.6.1")
 
     // WorkManager (déclarations directes garantissant le classpath)
     implementation("androidx.work:work-runtime:2.11.0")
@@ -93,7 +93,7 @@ dependencies {
 }
 // Force v11.0 synchronization
 
-kapt {
+ksp {
     correctErrorTypes = true
     arguments {
         arg("room.schemaLocation", "$projectDir/schemas")
@@ -104,3 +104,4 @@ kapt {
 // Stable Room v2.6.1 configuration for NexusMemory v11.0
 // Architecture transition to KSP for NexusMemory v11.0
 // Force KSP compilation clean build for NexusMemory v11.0
+// Complete KSP purge of KAPT for v11.0
