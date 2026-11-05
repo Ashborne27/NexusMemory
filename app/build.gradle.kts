@@ -12,8 +12,8 @@ android {
         applicationId = "com.ashborne.nexusmemory.v7"
         minSdk = 26
         targetSdk = 35
-        versionCode = 9
-        versionName = "9.0"
+        versionCode = 11
+        versionName = "11.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -79,8 +79,8 @@ dependencies {
     kapt("androidx.room:room-compiler:2.6.1")
 
     // WorkManager (déclarations directes garantissant le classpath)
-    implementation("androidx.work:work-runtime:2.9.0")
-    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.work:work-runtime:2.11.0")
+    implementation("androidx.work:work-runtime-ktx:2.11.0")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
