@@ -93,9 +93,9 @@ dependencies {
 // Force v11.0 synchronization
 
 ksp {
-    arguments {
-        arg("room.schemaLocation", "$projectDir/schemas")
-    }
+    ksp {
+    arg("room.schemaLocation", "/schemas")
+}
 }
 // Room KAPT stabilization patch for NexusMemory v11.0
 // Fix Room KAPT incremental crash for v11.0
@@ -106,3 +106,4 @@ ksp {
 // KSP synchronization patch for NexusMemory v11.0
 // Enable stacktrace for v11.0 debugging
 // Remove obsolete correctErrorTypes for KSP migration v11.0// Purge obsolete kapt blocks for KSP v11.0
+// Fix orphaned arguments block for KSP v11.0
