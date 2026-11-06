@@ -2,7 +2,6 @@ plugins {
     id("com.google.devtools.ksp") version "2.0.21-1.0.25"
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("kotlin-kapt")
 }
 
 android {
@@ -106,4 +105,4 @@ ksp {
 // Complete KSP purge of KAPT for v11.0
 // KSP synchronization patch for NexusMemory v11.0
 // Enable stacktrace for v11.0 debugging
-// Remove obsolete correctErrorTypes for KSP migration v11.0
+// Remove obsolete correctErrorTypes for KSP migration v11.0// Purge obsolete kapt blocks for KSP v11.0
