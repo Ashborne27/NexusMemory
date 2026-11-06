@@ -106,3 +106,4 @@ ksp {
 // Force KSP compilation clean build for NexusMemory v11.0
 // Complete KSP purge of KAPT for v11.0
 // KSP synchronization patch for NexusMemory v11.0
+// Enable stacktrace for v11.0 debugging
