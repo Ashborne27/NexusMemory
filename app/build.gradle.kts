@@ -94,7 +94,6 @@ dependencies {
 // Force v11.0 synchronization
 
 ksp {
-    correctErrorTypes = true
     arguments {
         arg("room.schemaLocation", "$projectDir/schemas")
     }
@@ -107,3 +106,4 @@ ksp {
 // Complete KSP purge of KAPT for v11.0
 // KSP synchronization patch for NexusMemory v11.0
 // Enable stacktrace for v11.0 debugging
+// Remove obsolete correctErrorTypes for KSP migration v11.0
