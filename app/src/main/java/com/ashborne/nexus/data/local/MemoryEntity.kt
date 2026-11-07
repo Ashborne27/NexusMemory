@@ -1,0 +1,13 @@
+package com.ashborne.nexus.data.local
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "memories")
+data class MemoryEntity(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0L,
+    val title: String,
+    val content: String,
+    val timestamp: Long = System.currentTimeMillis()
+)
