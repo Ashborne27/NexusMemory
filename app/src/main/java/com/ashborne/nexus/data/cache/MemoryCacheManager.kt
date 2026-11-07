@@ -8,8 +8,7 @@ object MemoryCacheManager {
     private val memoryCache = ConcurrentHashMap<String, Any>()
 
     private val _cacheState = MutableStateFlow>(emptyMap())
-    val cacheState: StateFlow>
-        get() = _cacheState
+    val cacheState: StateFlow> get() = _cacheState
 
     fun <T : Any> get(key: String): T? {
         @Suppress("UNCHECKED_CAST")
