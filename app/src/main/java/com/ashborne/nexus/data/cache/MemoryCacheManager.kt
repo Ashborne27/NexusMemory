@@ -1,12 +1,16 @@
 package com.ashborne.nexus.data.cache
 
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.util.concurrent.ConcurrentHashMap
+import java.util.HashMap
 
 object MemoryCacheManager {
     private val memoryCache = ConcurrentHashMap<String, Any>()
 
-    val cacheState = MutableStateFlow>(emptyMap())
+    private val _cacheState = MutableStateFlow<kotlin.collections.Map<String, Any>>(emptyMap())
+    val cacheState: StateFlow<kotlin.collections.Map<String, Any>> = _cacheState.asStateFlow()
 
     fun <T : Any> get(key: String): T? {
         @Suppress("UNCHECKED_CAST")
@@ -15,11 +19,11 @@ object MemoryCacheManager {
 
     fun put(key: String, value: Any) {
         memoryCache[key] = value
-        cacheState.value = HashMap(memoryCache)
+        _cacheState.value = HashMap(memoryCache)
     }
 
     fun invalidate() {
         memoryCache.clear()
-        cacheState.value = emptyMap()
+        _cacheState.value = emptyMap()
     }
 }
